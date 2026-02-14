@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='my.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">Question of the Day</h1>
+    <div class="question-box">
+      <pre>{{ question }}</pre>
+    </div>
+    <form action="{{ url_for('submit_code') }}" method="post" class="code-form">
+      <label for="language">Choose Language:</label>
+      <select name="language" id="language" class="select-input">
+        <option value="python3">Python</option>
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+      </select>
+      <textarea id="code-input" name="code-input" rows="12" cols="60" placeholder="Write your code here..." class="code-area">{{ code }}</textarea>
+      <label for="stdin">Custom Input:</label>
+      <textarea id="stdin" name="stdin" rows="4" cols="60" placeholder="Enter input here..." class="input-area"></textarea>
+      <button type="submit" name="action" value="run" class="btn">Run</button>
+      <button type="submit" name="action" value="submit" class="btn">Submit Code</button>
+    </form>
+    {% if output %}
+      <div class="output-box">
+        <h2>Program Output</h2>
+        <pre>{{ output }}</pre>
+      </div>
+    {% endif %}
+    {% if verdict %}
+      <div class="result-box">
+        <h2>Result: {{ verdict }}</h2>
+        <p>Passed {{ passed }} / {{ total }} test cases</p>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

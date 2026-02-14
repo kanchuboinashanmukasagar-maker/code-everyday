@@ -1,0 +1,6 @@
+2026-02-14
+QUESTION: Problem Title: Array Balance Point
+Problem Statement: You are given an array of integers. Your task is to determine if there exists an index i such that if you remove the element at index i, the sum of all elements to the left of index i is equal to the sum of all elements to the right of index i. The elements at index i itself are not included in either sum. If such an index exists, output YES. Otherwise, output NO. An empty sum is considered 0.
+Input Format: The first line contains an integer N, the number of elements in the array. The second line contains N space-separated integers, A[0], A[1], ..., A[N-1].
+Output Format: Output YES if such an index exists, otherwise output NO.
+Constraints: 1 <= N <= 100000 -1000 <= A[i] <= 1000

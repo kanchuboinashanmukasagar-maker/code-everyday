@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Coding Question Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Code Everyday</h1>
+        <form action="/login" method="post" class="login-form">
+            <input type="text" name="username" class="my-input" placeholder="Enter Username" required>
+            <input type="password" name="password" class="my-input" placeholder="Enter Password" required>
+            <button type="submit" class="btn">Login</button>
+            <p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
+        </form>
+    </div>
+</body>
+</html>
