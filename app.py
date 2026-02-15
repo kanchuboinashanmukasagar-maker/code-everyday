@@ -3,16 +3,16 @@ import sqlite3, os, re, requests
 from dotenv import load_dotenv
 import google.generativeai as genai
 from datetime import date
-
+import psycopg2
 load_dotenv()
 genai.configure(api_key=os.getenv("API_KEY"))
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 FILE = "daily.txt"
-app.secret_key = 'Pavan@2007'
+app.secret_key = os.environ.get("SECRET_KEY", "fallbacksecret")
 
-def get():
-    return sqlite3.connect("login.sqlite3")
+def get_conn():
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))
 
 def load_testcases(question):
     cases = []
@@ -33,9 +33,9 @@ def home():
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
-    conn = get()
+    conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT username, password FROM users WHERE username=? AND password=?", (username, password))
+    cur.execute("SELECT username, password FROM users WHERE username=%s AND password=%s", (username, password))
     data = cur.fetchone()
     conn.close()
     if data:
@@ -49,7 +49,7 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        conn = get()
+        conn = get_conn()
         cur = conn.cursor()
         try:
             cur.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
@@ -130,4 +130,5 @@ def submit_code():
     return render_template('index.html', question=question, code=code, verdict=verdict, passed=passed, total=total)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
