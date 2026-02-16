@@ -1,12 +1,12 @@
-import sqlite3
-conn = sqlite3.connect("login.sqlite3")
-cur = conn.cursor()
-cur.execute('''
-CREATE TABLE IF NOT EXISTS users (
-    username TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL
-)
-''')
-cur.execute("INSERT OR IGNORE INTO users(username,password) VALUES(?,?)",("stu1","pass1"))
-conn.commit()
-conn.close()
+import os, psycopg2
+from dotenv import load_dotenv
+load_dotenv()
+def init_db():
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
+    cur = conn.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL)''')
+    conn.commit()
+    cur.close()
+    conn.close()
+if __name__ == "__main__":
+    init_db()
