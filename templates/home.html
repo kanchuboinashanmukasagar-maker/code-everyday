@@ -1,20 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Coding Question Generator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Daily Coding Question Generator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1 class="title">Code Everyday</h1>
-        <form action="/login" method="post" class="login-form">
-            <input type="text" name="username" class="my-input" placeholder="Enter Username" required>
-            <input type="password" name="password" class="my-input" placeholder="Enter Password" required>
-            <button type="submit" class="btn">Login</button>
-            <p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
-        </form>
-    </div>
+  <div class="container">
+    <h1 class="title">Code Everyday</h1>
+    <form action="{{ url_for('login') }}" method="post" class="login-form">
+      {{ form.csrf_token }}
+      {{ form.username(class_='my-input', placeholder='Enter Username') }}
+      {{ form.password(class_='my-input', placeholder='Enter Password') }}
+      <button type="submit" class="btn">Login</button>
+      <p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
+    </form>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, msg in messages %}
+            <li class="{{ category }}">{{ msg }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  </div>
 </body>
 </html>
