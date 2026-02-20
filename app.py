@@ -69,14 +69,16 @@ def generate_question():
     except Exception as e:
         raise Exception(f"Gemini parsing failed: {e}")
 
-def run_code(language,code,stdin):
-    payload={"language":language,"version":"*","files":[{"content":code}],"stdin":stdin}
-    r=requests.post("https://emkc.org/api/v2/piston/execute",json=payload,timeout=20)
-    result=r.json()
-    run=result.get("run")
-    if not run:
-        return ""
-    return run.get("output","")
+def run_code(language, code, stdin):
+    try:
+        payload = {"language": language, "version": "*", "files": [{"content": code}], "stdin": stdin}
+        r = requests.post("https://emkc.org/api/v2/piston/execute", json=payload, timeout=10)  # 10s max
+        result = r.json()
+        run = result.get("run")
+        if not run: return ""
+        return run.get("output","")
+    except Exception as e:
+        return f"Runtime Error: {e}"
 
 @app.route("/dashboard",methods=["GET","POST"])
 def dashboard():
@@ -97,19 +99,23 @@ def dashboard():
         code=request.form["code-input"]
         language=request.form["language"]
         hidden_tests=row[5]
-        tests=hidden_tests if isinstance(hidden_tests,list) else json.loads(hidden_tests)
-        total=len(tests);passed=0
-        for test in tests:
+        tests = hidden_tests if isinstance(hidden_tests, list) else json.loads(hidden_tests)
+        total = len(tests)
+        passed = 0
+        for i, test in enumerate(tests):
+            print("Running test:", i, test)  # <-- Step 2: log the test being run
             try:
-                inp=str(test.get("input","")).replace(",", " ")
-                out=test.get("output","")
-                result=run_code(language,code,inp)
-                if result.strip()==out.strip():
-                    passed+=1
+                inp = str(test.get("input","")).replace(",", " ")
+                out = str(test.get("output",""))
+                result = run_code(language, code, inp)
+                if result.strip() == out.strip():
+                    passed += 1
                 else:
-                    verdict="Wrong Answer";break
+                    verdict = "Wrong Answer"
+                    break
             except Exception:
-                verdict="Runtime Error";break
+                    verdict = "Runtime Error"
+                    break
         if passed==total:
             verdict="Accepted"
         cur.execute("INSERT INTO submissions(user_id,question_id,language,code,status,passed,total) VALUES(%s,%s,%s,%s,%s,%s,%s)",(session["user_id"],row[0],language,code,verdict,passed,total))
