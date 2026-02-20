@@ -64,13 +64,11 @@ def generate_question():
 
     payload = {
         "contents": [
-            {
-                "parts": [{"text": prompt}]
-            }
+            {"parts": [{"text": prompt}]}
         ]
     }
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     r = requests.post(url, json=payload, timeout=30)
 
@@ -78,6 +76,10 @@ def generate_question():
         raise Exception(f"Gemini API Error: {r.text}")
 
     data = r.json()
+
+    if "candidates" not in data:
+        raise Exception(f"Bad Gemini response: {data}")
+
     text = data["candidates"][0]["content"]["parts"][0]["text"]
 
     return json.loads(text)
