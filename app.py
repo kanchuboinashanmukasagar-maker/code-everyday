@@ -96,8 +96,10 @@ def dashboard():
         total=len(tests);passed=0
         for test in tests:
             try:
-                result=run_code(language,code,test["input"])
-                if result.strip()==test["output"].strip():
+                inp=test.get("input","")
+                out=test.get("output","")
+                result=run_code(language,code,inp)
+                if result.strip()==out.strip():
                     passed+=1
                 else:
                     verdict="Wrong Answer";break
