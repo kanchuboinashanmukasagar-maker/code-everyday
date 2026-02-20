@@ -51,71 +51,36 @@ def register():
     return render_template("register.html")
 
 def generate_question():
-    try:
-        if not GEMINI_API_KEY:
-            print("❌ GEMINI_API_KEY missing")
-            return {
-                "title": "Two Sum",
-                "description": "Given an array of integers, return indices of two numbers that add up to target.",
-                "sample_input": "nums = [2,7,11,15], target = 9",
-                "sample_output": "[0,1]",
-                "hidden_tests": [{"input": "2 7 11 15\n9", "output": "0 1"}]
+    if not GEMINI_API_KEY:
+        raise Exception("GEMINI_API_KEY not set")
+
+    prompt = (
+        "Generate ONE beginner DSA coding question in STRICT JSON.\n"
+        "Return fields:\n"
+        "title, description, sample_input, sample_output, hidden_tests\n"
+        "hidden_tests must contain at least 50 test cases.\n"
+        "No markdown. Only JSON."
+    )
+
+    payload = {
+        "contents": [
+            {
+                "parts": [{"text": prompt}]
             }
+        ]
+    }
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
 
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {
-                            "text": (
-                                "Generate ONE beginner DSA coding question in STRICT JSON.\n"
-                                "Return fields:\n"
-                                "title, description, sample_input, sample_output, hidden_tests\n"
-                                "hidden_tests must contain at least 5 test cases.\n"
-                                "Only JSON."
-                            )
-                        }
-                    ]
-                }
-            ]
-        }
+    r = requests.post(url, json=payload, timeout=30)
 
-        r = requests.post(url, json=payload, timeout=30)
-        data = r.json()
+    if r.status_code != 200:
+        raise Exception(f"Gemini API Error: {r.text}")
 
-        if "candidates" not in data:
-            print("❌ Gemini response error:", data)
+    data = r.json()
+    text = data["candidates"][0]["content"]["parts"][0]["text"]
 
-            # 🔥 fallback question so site never crashes
-            return {
-                "title": "Sum of Two Numbers",
-                "description": "Read two integers and print their sum.",
-                "sample_input": "2 3",
-                "sample_output": "5",
-                "hidden_tests": [
-                    {"input": "2 3", "output": "5"},
-                    {"input": "10 20", "output": "30"}
-                ]
-            }
-
-        text = data["candidates"][0]["content"]["parts"][0]["text"]
-        return json.loads(text)
-
-    except Exception as e:
-        print("❌ generate_question crash:", e)
-
-        return {
-            "title": "Sum of Two Numbers",
-            "description": "Read two integers and print their sum.",
-            "sample_input": "2 3",
-            "sample_output": "5",
-            "hidden_tests": [
-                {"input": "2 3", "output": "5"},
-                {"input": "10 20", "output": "30"}
-            ]
-        }
+    return json.loads(text)
 def run_code(language,code,stdin):
     payload={"language":language,"version":"*","files":[{"content":code}],"stdin":stdin}
     r=requests.post("https://emkc.org/api/v2/piston/execute",json=payload,timeout=20)
