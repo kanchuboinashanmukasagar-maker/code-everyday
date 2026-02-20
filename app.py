@@ -59,9 +59,11 @@ def generate_question():
             "No markdown. Only JSON.")
     data={"contents":[{"parts":[{"text":prompt}]}]}
     r=requests.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",headers=headers,json=data,timeout=60)
-    text=r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-    if text.startswith("```"):
-        text=text.split("```")[1]
+    resp=r.json()
+    if "candidates" not in resp:
+        raise Exception(f"Gemini API Error: {resp}")
+    text=resp["candidates"][0]["content"]["parts"][0]["text"]
+    text=text.strip().replace("```json","").replace("```","")
     return json.loads(text)
 
 def run_code(language,code,stdin):
