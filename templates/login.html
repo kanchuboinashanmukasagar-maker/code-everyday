@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+</head>
+<body>
+<div class="container">
+<h1 class="title">Code Everyday</h1>
+<form action="{{ url_for('login') }}" method="post" class="login-form">
+<input type="text" name="username" placeholder="Enter Username" class="my-input" required>
+<input type="password" name="password" placeholder="Enter Password" class="my-input" required>
+<button type="submit" class="btn">Login</button>
+<p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
+</form>
+{% with messages=get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<ul class="flashes">
+{% for category,msg in messages %}
+<li class="{{ category }}">{{ msg }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+</div>
+</body>
+</html>
