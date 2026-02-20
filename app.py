@@ -101,7 +101,7 @@ def dashboard():
         total=len(tests);passed=0
         for test in tests:
             try:
-                inp=test.get("input","")
+                inp=str(test.get("input","")).replace(",", " ")
                 out=test.get("output","")
                 result=run_code(language,code,inp)
                 if result.strip()==out.strip():
