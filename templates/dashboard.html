@@ -8,44 +8,62 @@
 </head>
 <body>
 <div class="container">
+
 <h1 class="title">Question of the Day</h1>
 
 <div class="question-box">
-<h2>{{ question_title }}</h2>
-<p>{{ question_desc }}</p>
+    <h2>{{ question_title }}</h2>
+    <p>{{ question_desc }}</p>
 
-<h3>Sample Input</h3>
-<pre>{{ sample_input }}</pre>
+    <h3>Sample Input</h3>
+    <pre>{{ sample_input }}</pre>
 
-<h3>Sample Output</h3>
-<pre>{{ sample_output }}</pre>
+    <h3>Sample Output</h3>
+    <pre>{{ sample_output }}</pre>
 </div>
 
 <form action="{{ url_for('dashboard') }}" method="post" class="code-form">
-<label for="language">Choose Language:</label>
-<select name="language" id="language" class="select-input">
-<option value="python3">Python</option>
-<option value="c">C</option>
-<option value="cpp">C++</option>
-<option value="java">Java</option>
-</select>
 
-<textarea id="code-input" name="code-input" rows="12" cols="60" placeholder="Write your code here..." class="code-area"></textarea>
+    <label for="language">Choose Language:</label>
+    <select name="language" id="language" class="select-input">
+        <option value="python3">Python</option>
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+    </select>
 
-<button type="submit" class="btn">Submit Code</button>
+    <textarea 
+        id="code-input" 
+        name="code-input" 
+        rows="14" 
+        cols="70" 
+        placeholder="Write your code here..." 
+        class="code-area"
+        required></textarea>
+
+    <div class="button-group">
+        <button type="submit" name="action" value="run" class="btn run-btn">
+            Run Code
+        </button>
+
+        <button type="submit" name="action" value="submit" class="btn submit-btn">
+            Submit
+        </button>
+    </div>
+
 </form>
 
 {% if output %}
 <div class="output-box">
-<h2>Program Output</h2>
-<pre>{{ output }}</pre>
+    <h2>Output</h2>
+    <pre>{{ output }}</pre>
 </div>
 {% endif %}
 
 {% if verdict %}
 <div class="result-box">
-<h2>Result: {{ verdict }}</h2>
-<p>Passed {{ passed }} / {{ total }} test cases</p>
+    <h2>Result: {{ verdict }}</h2>
+    <p>Passed {{ passed }} / {{ total }} test cases</p>
 </div>
 {% endif %}
 
