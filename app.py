@@ -96,26 +96,35 @@ def run_code(lang,code,stdin):
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    conn=get_conn();cur=conn.cursor()
-    cur.execute("SELECT id,title,description,sample_input,sample_output,hidden_tests FROM daily_questions WHERE qdate=%s",(date.today(),))
+    conn=get_conn()
+    cur=conn.cursor()
+
+    cur.execute("DELETE FROM daily_questions WHERE qdate=%s",(date.today(),))
+    conn.commit()
+
+    q=generate_question()
+    cur.execute("INSERT INTO daily_questions(qdate,title,description,sample_input,sample_output,hidden_tests) VALUES(%s,%s,%s,%s,%s,%s) RETURNING id",
+                (date.today(),q["title"],q["description"],q["sample_input"],q["sample_output"],json.dumps(q["hidden_tests"])))
+    question_id=cur.fetchone()[0]
+    conn.commit()
+
+    cur.execute("SELECT id,title,description,sample_input,sample_output,hidden_tests FROM daily_questions WHERE id=%s",(question_id,))
     row=cur.fetchone()
-    if not row:
-        q=generate_question()
-        cur.execute("INSERT INTO daily_questions(qdate,title,description,sample_input,sample_output,hidden_tests) VALUES(%s,%s,%s,%s,%s,%s) RETURNING id",
-                    (date.today(),q["title"],q["description"],q["sample_input"],q["sample_output"],json.dumps(q["hidden_tests"])))
-        conn.commit()
-        qid=cur.fetchone()[0]
-        cur.execute("SELECT id,title,description,sample_input,sample_output,hidden_tests FROM daily_questions WHERE id=%s",(qid,))
-        row=cur.fetchone()
-    question_id=row[0]
+
     tests=row[5] if isinstance(row[5],list) else json.loads(row[5])
-    output=None;verdict=None;passed=0;total=len(tests)
+    output=None
+    verdict=None
+    passed=0
+    total=len(tests)
+
     if request.method=="POST":
         code=request.form.get("code-input","")
         lang=request.form.get("language","")
         action=request.form.get("action")
+
         if action=="run":
             output=run_code(lang,code,row[3])
+
         elif action=="submit":
             for t in tests:
                 result=run_code(lang,code,str(t["input"]))
@@ -126,11 +135,16 @@ def dashboard():
                     break
             if passed==total:
                 verdict="Accepted"
+
             cur.execute("INSERT INTO submissions(user_id,question_id,language,code,status,passed,total) VALUES(%s,%s,%s,%s,%s,%s,%s)",
                         (session["user_id"],question_id,lang,code,verdict,passed,total))
             conn.commit()
+
             output=f"{passed}/{total} test cases passed"
-    cur.close();conn.close()
+
+    cur.close()
+    conn.close()
+
     return render_template("dashboard.html",
                            question_title=row[1],
                            question_desc=row[2],
