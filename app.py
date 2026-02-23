@@ -97,22 +97,26 @@ def run_code(lang,code,stdin):
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
+
     conn=get_conn()
     cur=conn.cursor()
 
-    cur.execute("DELETE FROM daily_questions WHERE qdate=%s",(date.today(),))
-    conn.commit()
+    today=date.today()
 
-    q=generate_question()
-    cur.execute("INSERT INTO daily_questions(qdate,title,description,sample_input,sample_output,hidden_tests) VALUES(%s,%s,%s,%s,%s,%s) RETURNING id",
-                (date.today(),q["title"],q["description"],q["sample_input"],q["sample_output"],json.dumps(q["hidden_tests"])))
-    question_id=cur.fetchone()[0]
-    conn.commit()
-
-    cur.execute("SELECT id,title,description,sample_input,sample_output,hidden_tests FROM daily_questions WHERE id=%s",(question_id,))
+    cur.execute("SELECT id,title,description,sample_input,sample_output,hidden_tests FROM daily_questions WHERE qdate=%s",(today,))
     row=cur.fetchone()
 
+    if not row:
+        q=generate_question()
+        cur.execute("""INSERT INTO daily_questions(qdate,title,description,sample_input,sample_output,hidden_tests)
+                       VALUES(%s,%s,%s,%s,%s,%s) RETURNING id,title,description,sample_input,sample_output,hidden_tests""",
+                    (today,q["title"],q["description"],q["sample_input"],q["sample_output"],json.dumps(q["hidden_tests"])))
+        row=cur.fetchone()
+        conn.commit()
+
+    question_id=row[0]
     tests=row[5] if isinstance(row[5],list) else json.loads(row[5])
+
     output=None
     verdict=None
     passed=0
@@ -137,7 +141,8 @@ def dashboard():
             if passed==total:
                 verdict="Accepted"
 
-            cur.execute("INSERT INTO submissions(user_id,question_id,language,code,status,passed,total) VALUES(%s,%s,%s,%s,%s,%s,%s)",
+            cur.execute("""INSERT INTO submissions(user_id,question_id,language,code,status,passed,total)
+                           VALUES(%s,%s,%s,%s,%s,%s,%s)""",
                         (session["user_id"],question_id,lang,code,verdict,passed,total))
             conn.commit()
 
@@ -155,7 +160,6 @@ def dashboard():
                            verdict=verdict,
                            passed=passed,
                            total=total)
-
 @app.route("/logout")
 def logout():
     session.pop("user_id",None)
