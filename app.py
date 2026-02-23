@@ -91,60 +91,98 @@ def run_code(lang,code,stdin):
     except Exception:
         return ""
 
-@app.route("/dashboard",methods=["GET","POST"])
+@app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    conn=get_conn()
-    cur=conn.cursor()
+    conn = get_conn()
+    cur = conn.cursor()
+    today = date.today()
 
-    today=date.today()
+    # 1️⃣ Check if today's question exists
+    cur.execute("""
+        SELECT id,title,description,sample_input,sample_output
+        FROM daily_questions
+        WHERE qdate=%s
+    """, (today,))
+    row = cur.fetchone()
 
-    cur.execute("SELECT id,title,description,sample_input,sample_output,hidden_tests FROM daily_questions WHERE qdate=%s",(today,))
-    row=cur.fetchone()
-
+    # 2️⃣ If not, generate and insert
     if not row:
-        q=generate_question()
-        cur.execute("""INSERT INTO daily_questions(qdate,title,description,sample_input,sample_output,hidden_tests)
-                       VALUES(%s,%s,%s,%s,%s,%s) RETURNING id,title,description,sample_input,sample_output,hidden_tests""",
-                    (today,q["title"],q["description"],q["sample_input"],q["sample_output"],json.dumps(q["hidden_tests"])))
-        row=cur.fetchone()
+        q = generate_question()
+
+        cur.execute("""
+            INSERT INTO daily_questions
+            (qdate,title,description,sample_input,sample_output)
+            VALUES(%s,%s,%s,%s,%s)
+            RETURNING id,title,description,sample_input,sample_output
+        """, (today,
+              q["title"],
+              q["description"],
+              q["sample_input"],
+              q["sample_output"]))
+        row = cur.fetchone()
+        question_id = row[0]
+
+        # Insert test cases separately
+        for t in q["hidden_tests"]:
+            cur.execute("""
+                INSERT INTO testcases(question_id,input,expected_output)
+                VALUES(%s,%s,%s)
+            """, (question_id, t["input"], t["output"]))
+
         conn.commit()
+    else:
+        question_id = row[0]
 
-    question_id=row[0]
-    tests=row[5] if isinstance(row[5],list) else json.loads(row[5])
+    # 3️⃣ Fetch testcases
+    cur.execute("""
+        SELECT input, expected_output
+        FROM testcases
+        WHERE question_id=%s
+    """, (question_id,))
+    tests = cur.fetchall()
 
-    output=None
-    verdict=None
-    passed=0
-    total=len(tests)
+    output = None
+    verdict = None
+    passed = 0
+    total = len(tests)
 
-    if request.method=="POST":
-        code=request.form.get("code-input","")
-        lang=request.form.get("language","")
-        action=request.form.get("action")
+    if request.method == "POST":
+        code = request.form.get("code-input", "")
+        lang = request.form.get("language", "")
+        action = request.form.get("action")
 
-        if action=="run":
-            output=run_code(lang,code,row[3])
+        if action == "run":
+            output = run_code(lang, code, row[3])
 
-        elif action=="submit":
+        elif action == "submit":
             for t in tests:
-                result=run_code(lang,code,str(t["input"]))
-                if result.strip()==str(t["output"]).strip():
-                    passed+=1
+                result = run_code(lang, code, t[0])
+                if result.strip() == t[1].strip():
+                    passed += 1
                 else:
-                    verdict="Wrong Answer"
+                    verdict = "Wrong Answer"
                     break
-            if passed==total:
-                verdict="Accepted"
 
-            cur.execute("""INSERT INTO submissions(user_id,question_id,language,code,status,passed,total)
-                           VALUES(%s,%s,%s,%s,%s,%s,%s)""",
-                        (session["user_id"],question_id,lang,code,verdict,passed,total))
+            if passed == total:
+                verdict = "Accepted"
+
+            cur.execute("""
+                INSERT INTO submissions
+                (user_id,question_id,language,code,status,passed,total)
+                VALUES(%s,%s,%s,%s,%s,%s,%s)
+            """, (session["user_id"],
+                  question_id,
+                  lang,
+                  code,
+                  verdict,
+                  passed,
+                  total))
             conn.commit()
 
-            output=f"{passed}/{total} test cases passed"
+            output = f"{passed}/{total} test cases passed"
 
     cur.close()
     conn.close()
