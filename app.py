@@ -125,18 +125,16 @@ def dashboard():
         cur.execute("SELECT id,title,description,sample_input,sample_output FROM daily_questions WHERE qdate=CURRENT_DATE")
         row=cur.fetchone()
 
-    question_data={
-        "id":row[0],
-        "title":row[1],
-        "description":row[2],
-        "sample_input":row[3],
-        "sample_output":row[4]
-    }
-
     cur.close()
     conn.close()
 
-    return render_template("dashboard.html",question=question_data)
+    return render_template(
+        "dashboard.html",
+        question_title=row[1],
+        question_desc=row[2],
+        sample_input=row[3],
+        sample_output=row[4]
+    )
 
 @app.route("/logout")
 def logout():
