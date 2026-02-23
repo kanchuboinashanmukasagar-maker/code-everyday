@@ -97,7 +97,7 @@ def run_code(lang,code,stdin):
     except Exception:
         return ""
 
-@app.route("/dashboard")
+@app.route("/dashboard", methods=["GET","POST"])
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
@@ -125,6 +125,29 @@ def dashboard():
         cur.execute("SELECT id,title,description,sample_input,sample_output FROM daily_questions WHERE qdate=CURRENT_DATE")
         row=cur.fetchone()
 
+    output=None
+    verdict=None
+    passed=0
+    total=0
+
+    if request.method=="POST":
+        language=request.form.get("language")
+        code=request.form.get("code-input")
+        action=request.form.get("action")
+
+        if action=="run":
+            output=run_code(language,code,row[3])
+
+        elif action=="submit":
+            cur.execute("SELECT input,expected_output FROM testcases WHERE question_id=%s",(row[0],))
+            tests=cur.fetchall()
+            total=len(tests)
+            for inp,exp in tests:
+                result=run_code(language,code,inp).strip()
+                if result==exp.strip():
+                    passed+=1
+            verdict="Accepted" if passed==total else "Wrong Answer"
+
     cur.close()
     conn.close()
 
@@ -133,9 +156,12 @@ def dashboard():
         question_title=row[1],
         question_desc=row[2],
         sample_input=row[3],
-        sample_output=row[4]
+        sample_output=row[4],
+        output=output,
+        verdict=verdict,
+        passed=passed,
+        total=total
     )
-
 @app.route("/logout")
 def logout():
     session.pop("user_id",None)
