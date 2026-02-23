@@ -8,8 +8,6 @@ app=Flask(__name__)
 app.secret_key=os.getenv("SECRET_KEY","dev-secret")
 DATABASE_URL=os.getenv("DATABASE_URL")
 GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
-print("DATABASE_URL:", DATABASE_URL)
-print("GEMINI_API_KEY:", GEMINI_API_KEY)
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     model=genai.GenerativeModel("gemini-1.5-flash")
