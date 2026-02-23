@@ -8,6 +8,7 @@ app=Flask(__name__)
 app.secret_key=os.getenv("SECRET_KEY","dev-secret")
 DATABASE_URL=os.getenv("DATABASE_URL")
 GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
+
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     model=genai.GenerativeModel("gemini-1.5-flash")
@@ -65,13 +66,18 @@ def generate_question():
         "description":"Read two integers and print their sum.",
         "sample_input":"2 3",
         "sample_output":"5",
-        "hidden_tests":[{"input":"2 3","output":"5"},{"input":"10 15","output":"25"}]
+        "hidden_tests":[
+            {"input":"2 3","output":"5"},
+            {"input":"10 15","output":"25"},
+            {"input":"100 200","output":"300"},
+            {"input":"0 0","output":"0"},
+            {"input":"-5 5","output":"0"}
+        ]
     }
     if not GEMINI_API_KEY:
         return placeholder
     try:
-        prompt=(f"Generate ONE beginner Data Structures and Algorithms coding question for {date.today()}.\n"
-                "Topic must be strictly DSA (arrays, strings, recursion, sorting, searching, etc).\n"
+        prompt=(f"Generate ONE beginner DSA coding question for {date.today()}.\n"
                 "Return STRICT JSON only.\n"
                 "Fields: title, description, sample_input, sample_output, hidden_tests.\n"
                 "hidden_tests must contain at least 20 test cases.\n"
@@ -91,111 +97,39 @@ def run_code(lang,code,stdin):
     except Exception:
         return ""
 
-@app.route("/dashboard", methods=["GET", "POST"])
+@app.route("/dashboard")
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    conn = get_conn()
-    cur = conn.cursor()
-    today = date.today()
+    conn=get_conn()
+    cur=conn.cursor()
 
-    # 1️⃣ Check if today's question exists
-    cur.execute("""
-        SELECT id,title,description,sample_input,sample_output
-        FROM daily_questions
-        WHERE qdate=%s
-    """, (today,))
-    row = cur.fetchone()
+    cur.execute("SELECT id,title,description,sample_input,sample_output FROM daily_questions WHERE qdate=CURRENT_DATE")
+    row=cur.fetchone()
 
-    # 2️⃣ If not, generate and insert
     if not row:
-        q = generate_question()
-
+        q=generate_question()
         cur.execute("""
-            INSERT INTO daily_questions
-            (qdate,title,description,sample_input,sample_output)
-            VALUES(%s,%s,%s,%s,%s)
-            RETURNING id,title,description,sample_input,sample_output
-        """, (today,
-              q["title"],
-              q["description"],
-              q["sample_input"],
-              q["sample_output"]))
-        row = cur.fetchone()
-        question_id = row[0]
-
-        # Insert test cases separately
+            INSERT INTO daily_questions(qdate,title,description,sample_input,sample_output)
+            VALUES(CURRENT_DATE,%s,%s,%s,%s)
+            RETURNING id
+        """,(q["title"],q["description"],q["sample_input"],q["sample_output"]))
+        question_id=cur.fetchone()[0]
         for t in q["hidden_tests"]:
             cur.execute("""
                 INSERT INTO testcases(question_id,input,expected_output)
                 VALUES(%s,%s,%s)
-            """, (question_id, t["input"], t["output"]))
-
+            """,(question_id,t["input"],t["output"]))
         conn.commit()
-    else:
-        question_id = row[0]
-
-    # 3️⃣ Fetch testcases
-    cur.execute("""
-        SELECT input, expected_output
-        FROM testcases
-        WHERE question_id=%s
-    """, (question_id,))
-    tests = cur.fetchall()
-
-    output = None
-    verdict = None
-    passed = 0
-    total = len(tests)
-
-    if request.method == "POST":
-        code = request.form.get("code-input", "")
-        lang = request.form.get("language", "")
-        action = request.form.get("action")
-
-        if action == "run":
-            output = run_code(lang, code, row[3])
-
-        elif action == "submit":
-            for t in tests:
-                result = run_code(lang, code, t[0])
-                if result.strip() == t[1].strip():
-                    passed += 1
-                else:
-                    verdict = "Wrong Answer"
-                    break
-
-            if passed == total:
-                verdict = "Accepted"
-
-            cur.execute("""
-                INSERT INTO submissions
-                (user_id,question_id,language,code,status,passed,total)
-                VALUES(%s,%s,%s,%s,%s,%s,%s)
-            """, (session["user_id"],
-                  question_id,
-                  lang,
-                  code,
-                  verdict,
-                  passed,
-                  total))
-            conn.commit()
-
-            output = f"{passed}/{total} test cases passed"
+        cur.execute("SELECT id,title,description,sample_input,sample_output FROM daily_questions WHERE qdate=CURRENT_DATE")
+        row=cur.fetchone()
 
     cur.close()
     conn.close()
 
-    return render_template("dashboard.html",
-                           question_title=row[1],
-                           question_desc=row[2],
-                           sample_input=row[3],
-                           sample_output=row[4],
-                           output=output,
-                           verdict=verdict,
-                           passed=passed,
-                           total=total)
+    return render_template("dashboard.html",question=row)
+
 @app.route("/logout")
 def logout():
     session.pop("user_id",None)
