@@ -15,7 +15,7 @@ if GEMINI_API_KEY:
 
 
 def get_conn():
-    return psycopg2.connect(DATABASE_URL, sslmode="require")
+    return psycopg2.connect(DATABASE_URL, sslmode="require", connect_timeout=10)
 
 
 def init_db():
@@ -52,11 +52,7 @@ def init_db():
     conn.close()
 
 
-# Run DB init on startup
-try:
-    init_db()
-except Exception as e:
-    print(f"DB init warning: {e}")
+# DB tables are already created on Render - no startup init needed
 
 
 # ─── Auth Routes ────────────────────────────────────────────────────────────
