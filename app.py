@@ -188,8 +188,11 @@ def dashboard():
         )
         row = cur.fetchone()
 
-    output            = None
-    verdict           = None
+    # use sentinel string so template can distinguish "not run yet" vs "ran but empty"
+    output            = ""
+    show_output       = False
+    verdict           = ""
+    show_verdict      = False
     passed            = 0
     total             = 0
     last_code         = ""
@@ -207,7 +210,8 @@ def dashboard():
         last_custom_input = custom_input
 
         if action == "run":
-            output = run_code(language, code, custom_input)
+            output      = run_code(language, code, custom_input)
+            show_output = True
 
         elif action == "submit":
             cur.execute(
@@ -216,12 +220,14 @@ def dashboard():
             tests = cur.fetchall()
             total = len(tests)
             if total == 0:
-                verdict = "No test cases found."
+                verdict      = "No test cases found."
+                show_verdict = True
             else:
                 for inp, exp in tests:
                     if normalize(run_code(language, code, inp)) == normalize(exp):
                         passed += 1
-                verdict = "Accepted ✓" if passed == total else "Wrong Answer ✗"
+                verdict      = "Accepted" if passed == total else "Wrong Answer"
+                show_verdict = True
 
     cur.close()
     conn.close()
@@ -234,7 +240,9 @@ def dashboard():
         sample_input      = row[3],
         sample_output     = row[4],
         output            = output,
+        show_output       = show_output,
         verdict           = verdict,
+        show_verdict      = show_verdict,
         passed            = passed,
         total             = total,
         last_code         = last_code,

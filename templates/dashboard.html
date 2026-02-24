@@ -116,7 +116,7 @@
     </form>
 
     <!-- Output -->
-    {% if output is not none %}
+    {% if show_output %}
     <div class="result-panel result-panel--output">
       <div class="result-label">Output</div>
       <pre class="result-pre">{{ output if output else '(no output)' }}</pre>
@@ -124,14 +124,16 @@
     {% endif %}
 
     <!-- Verdict -->
-    {% if verdict %}
-    <div class="result-panel result-panel--verdict {% if 'Accepted' in verdict %}verdict--accepted{% else %}verdict--wrong{% endif %}">
+    {% if show_verdict %}
+    <div class="result-panel result-panel--verdict {% if verdict == 'Accepted' %}verdict--accepted{% else %}verdict--wrong{% endif %}">
       <div class="result-label">Verdict</div>
-      <div class="verdict-text">{{ verdict }}</div>
+      <div class="verdict-text">{% if verdict == 'Accepted' %}Accepted ✓{% elif verdict == 'Wrong Answer' %}Wrong Answer ✗{% else %}{{ verdict }}{% endif %}</div>
+      {% if total > 0 %}
       <div class="verdict-score">{{ passed }} / {{ total }} test cases passed</div>
       <div class="verdict-bar">
-        <div class="verdict-bar-fill" data-pct="{{ (passed / total * 100) | int if total > 0 else 0 }}"></div>
+        <div class="verdict-bar-fill" data-pct="{{ (passed / total * 100) | int }}"></div>
       </div>
+      {% endif %}
     </div>
     {% endif %}
 
