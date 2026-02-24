@@ -196,31 +196,81 @@ def generate_question():
         return PLACEHOLDER_QUESTION
 
 
+def normalize(text):
+    """
+    Normalize output for comparison:
+    - Strip leading/trailing whitespace from the whole output
+    - Strip each line individually
+    - Remove blank lines
+    - Normalize \r\n to \n
+    """
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = [line.strip() for line in text.strip().split("\n")]
+    lines = [line for line in lines if line != ""]
+    return "\n".join(lines)
+
+
 def run_code(lang, code, stdin):
     """Run code via Piston API and return stdout output."""
+    # Map friendly language names to Piston language IDs
+    lang_map = {
+        "python3": "python",
+        "python":  "python",
+        "c":       "c",
+        "cpp":     "c++",
+        "java":    "java",
+        "javascript": "javascript",
+        "js":      "javascript",
+    }
+    piston_lang = lang_map.get(lang, lang)
+
     payload = {
-        "language": lang,
+        "language": piston_lang,
         "version": "*",
-        "files": [{"content": code}],
-        "stdin": stdin or ""
+        "files": [{"name": "main", "content": code}],
+        "stdin": stdin or "",
+        "compile_timeout": 10000,
+        "run_timeout": 5000,
     }
     try:
         r = requests.post(
             "https://emkc.org/api/v2/piston/execute",
             json=payload,
-            timeout=20
+            timeout=30
         )
-        run = r.json().get("run", {})
-        stderr = run.get("stderr", "")
-        stdout = run.get("output", run.get("stdout", ""))
-        # Return stderr too so users can debug
+        r.raise_for_status()
+        data = r.json()
+
+        # Check for compile errors
+        compile_info = data.get("compile", {})
+        if compile_info.get("stderr"):
+            return f"Compilation Error:\n{compile_info['stderr']}"
+
+        run = data.get("run", {})
+        stderr = run.get("stderr", "").strip()
+        stdout = run.get("stdout", run.get("output", "")).strip()
+
+        if stdout and stderr:
+            return f"{stdout}\n\nStderr:\n{stderr}"
         if stderr and not stdout:
-            return stderr
-        return stdout
+            return f"Runtime Error:\n{stderr}"
+        return stdout if stdout else "(no output)"
+
     except requests.exceptions.Timeout:
-        return "Error: Code execution timed out."
+        return "Error: Code execution timed out (>30s). Try a simpler test case."
+    except requests.exceptions.ConnectionError:
+        return "Error: Could not connect to code execution server. Check your internet connection."
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error: {str(e)}"
+
+
+@app.route("/test-piston")
+def test_piston():
+    """Debug route to check if Piston API is reachable."""
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    result = run_code("python3", "print('hello from piston')", "")
+    return f"<pre>Piston test result: {result!r}</pre>"
 
 
 # ─── Dashboard ──────────────────────────────────────────────────────────────
@@ -280,8 +330,9 @@ def dashboard():
         last_custom_input = custom_input
 
         if action == "run":
-            # Use user's custom input for the Run button
             output = run_code(language, code, custom_input)
+            if not output:
+                output = "(no output)"
 
         elif action == "submit":
             cur.execute(
@@ -290,11 +341,14 @@ def dashboard():
             )
             tests = cur.fetchall()
             total = len(tests)
-            for inp, exp in tests:
-                result = run_code(language, code, inp).strip()
-                if result == exp.strip():
-                    passed += 1
-            verdict = "Accepted ✓" if passed == total else "Wrong Answer ✗"
+            if total == 0:
+                verdict = "No test cases found for this question."
+            else:
+                for inp, exp in tests:
+                    result = (run_code(language, code, inp) or "").strip()
+                    if result == exp.strip():
+                        passed += 1
+                verdict = "Accepted ✓" if passed == total else "Wrong Answer ✗"
 
     cur.close()
     conn.close()
