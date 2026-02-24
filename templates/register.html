@@ -1,18 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Register</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Register — Code Everyday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 </head>
 <body>
-<div class="container">
-<h1>Create Account</h1>
-<form action="{{ url_for('register') }}" method="post">
-<input type="text" name="username" placeholder="Choose Username" required>
-<input type="password" name="password" placeholder="Choose Password" required>
-<button type="submit">Register</button>
-</form>
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="brand-icon">&lt;/&gt;</span>
+      <h1 class="brand-name">Code Everyday</h1>
+      <p class="brand-sub">Create your account and start the streak.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash flash--{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('register') }}" method="post" class="auth-form">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="choose_a_username" minlength="3" autocomplete="username" required>
+        <span class="field-hint">At least 3 characters</span>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" minlength="6" autocomplete="new-password" required>
+        <span class="field-hint">At least 6 characters</span>
+      </div>
+      <button type="submit" class="btn-primary">Create Account</button>
+    </form>
+
+    <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+  </div>
+
+  <div class="auth-deco" aria-hidden="true">
+    <pre class="deco-code">
+<span class="c-comment">// Join the daily challenge</span>
+<span class="c-kw">class</span> <span class="c-fn">Coder</span> {
+  <span class="c-fn">constructor</span>(name) {
+    <span class="c-kw">this</span>.name = name;
+    <span class="c-kw">this</span>.streak = <span class="c-num">0</span>;
+    <span class="c-kw">this</span>.level = <span class="c-str">"rising"</span>;
+  }
+
+  <span class="c-fn">solveToday</span>() {
+    <span class="c-kw">this</span>.streak++;
+    <span class="c-kw">return</span> <span class="c-str">"Accepted ✓"</span>;
+  }
+}
+    </pre>
+  </div>
 </div>
 </body>
 </html>

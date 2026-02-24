@@ -3,70 +3,183 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dashboard</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='my.css') }}">
+<title>Dashboard — Code Everyday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-<div class="container">
 
-<h1 class="title">Question of the Day</h1>
+<!-- ── Top Nav ──────────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">&lt;/&gt;</span>
+    <span class="brand-name">Code Everyday</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user">👤 {{ username }}</span>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+  </div>
+</nav>
 
-<div class="question-box">
-    <h2>{{ question_title }}</h2>
-    <p>{{ question_desc }}</p>
+<!-- ── Main Layout ──────────────────────────────────────────── -->
+<main class="main-layout">
 
-    <h3>Sample Input</h3>
-    <pre>{{ sample_input }}</pre>
-
-    <h3>Sample Output</h3>
-    <pre>{{ sample_output }}</pre>
-</div>
-
-<form action="{{ url_for('dashboard') }}" method="post" class="code-form">
-
-    <label for="language">Choose Language:</label>
-    <select name="language" id="language" class="select-input">
-        <option value="python3">Python</option>
-        <option value="c">C</option>
-        <option value="cpp">C++</option>
-        <option value="java">Java</option>
-    </select>
-
-    <textarea 
-        id="code-input" 
-        name="code-input" 
-        rows="14" 
-        cols="70" 
-        placeholder="Write your code here..." 
-        class="code-area"
-        required></textarea>
-
-    <div class="button-group">
-        <button type="submit" name="action" value="run" class="btn run-btn">
-            Run Code
-        </button>
-
-        <button type="submit" name="action" value="submit" class="btn submit-btn">
-            Submit
-        </button>
+  <!-- LEFT: Question Panel -->
+  <section class="panel panel--question">
+    <div class="panel-header">
+      <div class="pill pill--daily">Daily Challenge</div>
+      <span class="panel-date" id="today-date"></span>
     </div>
 
-</form>
+    <h2 class="question-title">{{ question_title }}</h2>
 
-{% if output %}
-<div class="output-box">
-    <h2>Output</h2>
-    <pre>{{ output }}</pre>
-</div>
-{% endif %}
+    <div class="question-body">
+      {% for line in question_desc.split('\n') %}
+        {% if line.startswith('**') and line.endswith('**') %}
+          <h4 class="q-section-heading">{{ line.replace('**','') }}</h4>
+        {% elif line.strip() == '' %}
+          <br>
+        {% else %}
+          <p>{{ line }}</p>
+        {% endif %}
+      {% endfor %}
+    </div>
 
-{% if verdict %}
-<div class="result-box">
-    <h2>Result: {{ verdict }}</h2>
-    <p>Passed {{ passed }} / {{ total }} test cases</p>
-</div>
-{% endif %}
+    <div class="io-examples">
+      <div class="io-block">
+        <div class="io-label">Sample Input</div>
+        <pre class="io-pre">{{ sample_input }}</pre>
+      </div>
+      <div class="io-block">
+        <div class="io-label">Sample Output</div>
+        <pre class="io-pre">{{ sample_output }}</pre>
+      </div>
+    </div>
+  </section>
 
-</div>
+  <!-- RIGHT: Code Editor Panel -->
+  <section class="panel panel--editor">
+    <form action="{{ url_for('dashboard') }}" method="post" id="code-form">
+
+      <!-- Language Selector -->
+      <div class="editor-toolbar">
+        <label for="language" class="toolbar-label">Language</label>
+        <select name="language" id="language" class="lang-select">
+          <option value="python3"  {% if last_language == 'python3'  %}selected{% endif %}>🐍 Python 3</option>
+          <option value="c"        {% if last_language == 'c'        %}selected{% endif %}>C</option>
+          <option value="cpp"      {% if last_language == 'cpp'      %}selected{% endif %}>C++</option>
+          <option value="java"     {% if last_language == 'java'     %}selected{% endif %}>☕ Java</option>
+          <option value="javascript" {% if last_language == 'javascript' %}selected{% endif %}>JS</option>
+        </select>
+      </div>
+
+      <!-- Code Area -->
+      <div class="code-wrap">
+        <div class="line-nums" id="line-nums">1</div>
+        <textarea
+          id="code-input"
+          name="code-input"
+          class="code-area"
+          placeholder="// Write your solution here..."
+          spellcheck="false"
+          autocorrect="off"
+          autocapitalize="off"
+          required>{{ last_code }}</textarea>
+      </div>
+
+      <!-- Custom Input -->
+      <div class="custom-input-block">
+        <label for="custom-input" class="input-label">
+          Custom Input
+          <span class="label-hint">(used by Run button)</span>
+        </label>
+        <textarea
+          id="custom-input"
+          name="custom-input"
+          class="custom-input-area"
+          placeholder="Enter your test input here..."
+          spellcheck="false">{{ last_custom_input }}</textarea>
+      </div>
+
+      <!-- Buttons -->
+      <div class="btn-row">
+        <button type="submit" name="action" value="run" class="btn btn--run">
+          ▶ Run
+        </button>
+        <button type="submit" name="action" value="submit" class="btn btn--submit">
+          ✓ Submit
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Output -->
+    {% if output is not none %}
+    <div class="result-panel result-panel--output">
+      <div class="result-label">Output</div>
+      <pre class="result-pre">{{ output if output else '(no output)' }}</pre>
+    </div>
+    {% endif %}
+
+    <!-- Verdict -->
+    {% if verdict %}
+    <div class="result-panel result-panel--verdict {% if 'Accepted' in verdict %}verdict--accepted{% else %}verdict--wrong{% endif %}">
+      <div class="result-label">Verdict</div>
+      <div class="verdict-text">{{ verdict }}</div>
+      <div class="verdict-score">{{ passed }} / {{ total }} test cases passed</div>
+      <div class="verdict-bar">
+        <div class="verdict-bar-fill" data-pct="{{ (passed / total * 100) | int if total > 0 else 0 }}"></div>
+      </div>
+    </div>
+    {% endif %}
+
+  </section>
+</main>
+
+<script>
+  // Apply verdict bar width from data attribute (avoids CSS linter warning)
+  const barFill = document.querySelector('.verdict-bar-fill');
+  if (barFill) barFill.style.width = barFill.dataset.pct + '%';
+
+  // Show today's date
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Live line numbers
+  const ta = document.getElementById('code-input');
+  const ln = document.getElementById('line-nums');
+
+  function updateLines() {
+    const lines = ta.value.split('\n').length;
+    ln.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+  }
+  ta.addEventListener('input', updateLines);
+  updateLines();
+
+  // Tab key support in textarea
+  ta.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+      this.selectionStart = this.selectionEnd = start + 4;
+      updateLines();
+    }
+  });
+
+  // Show loading state on submit
+  document.getElementById('code-form').addEventListener('submit', function(e) {
+    const btn = e.submitter;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = btn.value === 'run' ? '⏳ Running...' : '⏳ Judging...';
+      setTimeout(() => { btn.disabled = false; }, 30000);
+    }
+  });
+</script>
+
 </body>
 </html>

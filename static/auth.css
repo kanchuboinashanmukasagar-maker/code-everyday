@@ -1,0 +1,215 @@
+/* ─── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0d0f14;
+  --surface:  #161a24;
+  --border:   #252b3b;
+  --accent:   #4ade80;
+  --accent2:  #38bdf8;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --error:    #f87171;
+  --success:  #4ade80;
+  --font-ui:  'Syne', sans-serif;
+  --font-code:'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+}
+
+/* ─── Layout ────────────────────────────────────────────────── */
+.auth-wrapper {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.auth-card {
+  width: 420px;
+  min-width: 340px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 52px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+
+.auth-deco {
+  flex: 1;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow: hidden;
+}
+
+/* ─── Brand ─────────────────────────────────────────────────── */
+.brand {
+  margin-bottom: 8px;
+}
+
+.brand-icon {
+  display: inline-block;
+  font-family: var(--font-code);
+  font-size: 28px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.brand-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.brand-sub {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ─── Flash Messages ────────────────────────────────────────── */
+.flash {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border-left: 3px solid;
+}
+.flash--error {
+  background: rgba(248,113,113,0.1);
+  border-color: var(--error);
+  color: var(--error);
+}
+.flash--success {
+  background: rgba(74,222,128,0.1);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+/* ─── Form ──────────────────────────────────────────────────── */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.field input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 11px 14px;
+  font-family: var(--font-code);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.12);
+}
+
+.field input::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.btn-primary {
+  margin-top: 4px;
+  padding: 13px;
+  background: var(--accent);
+  color: #0d0f14;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  letter-spacing: 0.3px;
+}
+
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.auth-switch {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.auth-switch a {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-switch a:hover { text-decoration: underline; }
+
+/* ─── Decorative Code Panel ─────────────────────────────────── */
+.deco-code {
+  font-family: var(--font-code);
+  font-size: 14px;
+  line-height: 1.9;
+  color: #334155;
+  white-space: pre;
+  user-select: none;
+  animation: fadeInUp 0.8s ease both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.c-kw   { color: #818cf8; }
+.c-fn   { color: #38bdf8; }
+.c-str  { color: #fbbf24; }
+.c-num  { color: #fb923c; }
+.c-bool { color: #f472b6; }
+.c-comment { color: #334155; font-style: italic; }
+
+/* ─── Responsive ────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .auth-deco { display: none; }
+  .auth-card {
+    width: 100%;
+    border-right: none;
+    padding: 40px 28px;
+  }
+}

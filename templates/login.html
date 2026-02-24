@@ -3,27 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Login</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+<title>Login — Code Everyday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="auth.css">
 </head>
 <body>
-<div class="container">
-<h1 class="title">Code Everyday</h1>
-<form action="{{ url_for('login') }}" method="post" class="login-form">
-<input type="text" name="username" placeholder="Enter Username" class="my-input" required>
-<input type="password" name="password" placeholder="Enter Password" class="my-input" required>
-<button type="submit" class="btn">Login</button>
-<p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
-</form>
-{% with messages=get_flashed_messages(with_categories=true) %}
-{% if messages %}
-<ul class="flashes">
-{% for category,msg in messages %}
-<li class="{{ category }}">{{ msg }}</li>
-{% endfor %}
-</ul>
-{% endif %}
-{% endwith %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="brand-icon">&lt;/&gt;</span>
+      <h1 class="brand-name">Code Everyday</h1>
+      <p class="brand-sub">One problem. Every day. Get better.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash flash--{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('login') }}" method="post" class="auth-form">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="your_username" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary">Sign In</button>
+    </form>
+
+    <p class="auth-switch">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+  </div>
+
+  <div class="auth-deco" aria-hidden="true">
+    <pre class="deco-code">
+<span class="c-kw">def</span> <span class="c-fn">solve</span>(nums):
+    seen = <span class="c-kw">set</span>()
+    <span class="c-kw">for</span> n <span class="c-kw">in</span> nums:
+        <span class="c-kw">if</span> n <span class="c-kw">in</span> seen:
+            <span class="c-kw">return</span> <span class="c-bool">True</span>
+        seen.add(n)
+    <span class="c-kw">return</span> <span class="c-bool">False</span>
+
+<span class="c-comment"># Today's challenge awaits...</span>
+    </pre>
+  </div>
 </div>
 </body>
 </html>
