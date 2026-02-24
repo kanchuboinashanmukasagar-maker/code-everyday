@@ -23,7 +23,10 @@ def get_gemini_model():
 
 
 def get_conn():
-    return psycopg2.connect(DATABASE_URL, sslmode="require", connect_timeout=10)
+    url = DATABASE_URL or ""
+    if "localhost" in url or "127.0.0.1" in url or not url:
+        return psycopg2.connect(url, connect_timeout=10)
+    return psycopg2.connect(url, sslmode="require", connect_timeout=10)
 
 
 @app.route("/", methods=["GET", "POST"])
