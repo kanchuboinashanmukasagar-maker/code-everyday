@@ -619,6 +619,9 @@ html, body {
   z-index: 200;
 }
 
+.loading-overlay[hidden] {
+  display: none !important;
+}
 .loading-box {
   background: var(--surface);
   border: 1px solid var(--border2);

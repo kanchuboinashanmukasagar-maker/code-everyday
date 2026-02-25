@@ -226,6 +226,16 @@
     b.disabled = disabled;
   }
 
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 35000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
   // ── Run ───────────────────────────────────────────────────────
   async function handleRun() {
     const code = ta.value.trim();
@@ -236,7 +246,7 @@
     document.getElementById('output-panel').hidden = true;
 
     try {
-      const res = await fetch('/api/run', {
+      const res = await fetchWithTimeout('/api/run', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -248,7 +258,10 @@
       const data = await res.json();
       showRunOutput(data.output || '(no output)', data.ok !== false);
     } catch (err) {
-      showRunOutput('Network error: ' + err.message, false);
+      const msg = err.name === 'AbortError'
+        ? 'Request timed out. Please try again.'
+        : 'Network error: ' + err.message;
+      showRunOutput(msg, false);
     } finally {
       hideLoading();
       setBtn('btn-run', '▶ Run', false);
@@ -287,7 +300,7 @@
     }, 4000);
 
     try {
-      const res = await fetch('/api/submit', {
+      const res = await fetchWithTimeout('/api/submit', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -300,7 +313,10 @@
       showVerdict(data);
     } catch (err) {
       clearInterval(subTimer);
-      showVerdict({ ok: false, verdict: 'Network error: ' + err.message, passed: 0, total: 0 });
+      const msg = err.name === 'AbortError'
+        ? 'Request timed out. Please try again.'
+        : 'Network error: ' + err.message;
+      showVerdict({ ok: false, verdict: msg, passed: 0, total: 0 });
     } finally {
       hideLoading();
       setBtn('btn-submit', '✓ Submit', false);
