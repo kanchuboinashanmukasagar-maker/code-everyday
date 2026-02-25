@@ -26,40 +26,98 @@
       {% endif %}
     {% endwith %}
 
-    <form action="{{ url_for('register') }}" method="post" class="auth-form">
+    <form action="{{ url_for('register') }}" method="post" class="auth-form" id="reg-form">
       <div class="field">
         <label for="username">Username</label>
         <input type="text" id="username" name="username" placeholder="choose_a_username" minlength="3" autocomplete="username" required>
-        <span class="field-hint">At least 3 characters</span>
+        <span class="field-hint">At least 3 characters, letters and numbers only</span>
       </div>
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" minlength="6" autocomplete="new-password" required>
+        <div class="password-wrap">
+          <input type="password" id="password" name="password" placeholder="••••••••" minlength="6" autocomplete="new-password" required>
+          <button type="button" class="show-pw" onclick="togglePw()" aria-label="Toggle password">👁</button>
+        </div>
         <span class="field-hint">At least 6 characters</span>
       </div>
-      <button type="submit" class="btn-primary">Create Account</button>
+      <div class="strength-bar-wrap" id="strength-wrap" hidden>
+        <div class="strength-bar" id="strength-bar"></div>
+        <span class="strength-label" id="strength-label"></span>
+      </div>
+      <button type="submit" class="btn-primary" id="submit-btn">
+        <span class="btn-text">Create Account</span>
+        <span class="btn-loader" hidden>⏳ Creating...</span>
+      </button>
     </form>
 
     <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
   </div>
 
   <div class="auth-deco" aria-hidden="true">
-    <pre class="deco-code">
-<span class="c-comment">// Join the daily challenge</span>
+    <div class="deco-window">
+      <div class="deco-titlebar">
+        <span class="deco-dot deco-dot--red"></span>
+        <span class="deco-dot deco-dot--yellow"></span>
+        <span class="deco-dot deco-dot--green"></span>
+        <span class="deco-filename">coder.js</span>
+      </div>
+      <pre class="deco-code"><span class="c-comment">// Join the daily challenge</span>
 <span class="c-kw">class</span> <span class="c-fn">Coder</span> {
   <span class="c-fn">constructor</span>(name) {
     <span class="c-kw">this</span>.name = name;
     <span class="c-kw">this</span>.streak = <span class="c-num">0</span>;
-    <span class="c-kw">this</span>.level = <span class="c-str">"rising"</span>;
+    <span class="c-kw">this</span>.level = <span class="c-str">"beginner"</span>;
   }
 
   <span class="c-fn">solveToday</span>() {
     <span class="c-kw">this</span>.streak++;
-    <span class="c-kw">return</span> <span class="c-str">"Accepted ✓"</span>;
+    console.<span class="c-fn">log</span>(<span class="c-str">`Day ${this.streak}!`</span>);
+    <span class="c-kw">return</span> <span class="c-str">"✓ Accepted"</span>;
   }
-}
-    </pre>
+}</pre>
+    </div>
+    <div class="deco-stats">
+      <div class="stat-pill">🚀 Free forever</div>
+      <div class="stat-pill">💡 Beginner friendly</div>
+    </div>
   </div>
 </div>
+
+<script>
+  function togglePw() {
+    const inp = document.getElementById('password');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  const pwInput = document.getElementById('password');
+  const strengthWrap = document.getElementById('strength-wrap');
+  const strengthBar = document.getElementById('strength-bar');
+  const strengthLabel = document.getElementById('strength-label');
+
+  pwInput.addEventListener('input', function() {
+    const val = this.value;
+    if (!val) { strengthWrap.hidden = true; return; }
+    strengthWrap.hidden = false;
+    let score = 0;
+    if (val.length >= 6) score++;
+    if (val.length >= 10) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+    const colors = ['', '#f87171', '#fbbf24', '#38bdf8', '#4ade80', '#a78bfa'];
+    strengthBar.style.width = (score * 20) + '%';
+    strengthBar.style.background = colors[score];
+    strengthLabel.textContent = levels[score] || '';
+    strengthLabel.style.color = colors[score];
+  });
+
+  document.getElementById('reg-form').addEventListener('submit', function() {
+    const btn = document.getElementById('submit-btn');
+    btn.querySelector('.btn-text').hidden = true;
+    btn.querySelector('.btn-loader').hidden = false;
+    btn.disabled = true;
+  });
+</script>
 </body>
 </html>

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
 <body>
 <div class="auth-wrapper">
   <div class="auth-card">
@@ -25,34 +26,65 @@
       {% endif %}
     {% endwith %}
 
-    <form action="{{ url_for('login') }}" method="post" class="auth-form">
+    <form action="{{ url_for('login') }}" method="post" class="auth-form" id="login-form">
       <div class="field">
         <label for="username">Username</label>
         <input type="text" id="username" name="username" placeholder="your_username" autocomplete="username" required>
       </div>
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+        <div class="password-wrap">
+          <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+          <button type="button" class="show-pw" onclick="togglePw()" aria-label="Toggle password">👁</button>
+        </div>
       </div>
-      <button type="submit" class="btn-primary">Sign In</button>
+      <button type="submit" class="btn-primary" id="submit-btn">
+        <span class="btn-text">Sign In</span>
+        <span class="btn-loader" hidden>⏳ Signing in...</span>
+      </button>
     </form>
 
     <p class="auth-switch">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
   </div>
 
   <div class="auth-deco" aria-hidden="true">
-    <pre class="deco-code">
-<span class="c-kw">def</span> <span class="c-fn">solve</span>(nums):
-    seen = <span class="c-kw">set</span>()
-    <span class="c-kw">for</span> n <span class="c-kw">in</span> nums:
+    <div class="deco-window">
+      <div class="deco-titlebar">
+        <span class="deco-dot deco-dot--red"></span>
+        <span class="deco-dot deco-dot--yellow"></span>
+        <span class="deco-dot deco-dot--green"></span>
+        <span class="deco-filename">solution.py</span>
+      </div>
+      <pre class="deco-code"><span class="c-kw">def</span> <span class="c-fn">solve</span>(nums):
+    <span class="c-comment"># Hash map for O(n) lookup</span>
+    seen = {}
+    <span class="c-kw">for</span> i, n <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(nums):
         <span class="c-kw">if</span> n <span class="c-kw">in</span> seen:
-            <span class="c-kw">return</span> <span class="c-bool">True</span>
-        seen.add(n)
-    <span class="c-kw">return</span> <span class="c-bool">False</span>
+            <span class="c-kw">return</span> [seen[n], i]
+        seen[n] = i
+    <span class="c-kw">return</span> []
 
-<span class="c-comment"># Today's challenge awaits...</span>
-    </pre>
+<span class="c-comment"># ✓ Accepted — 1ms | 14.3 MB</span>
+<span class="c-comment"># Today's challenge awaits you...</span></pre>
+    </div>
+    <div class="deco-stats">
+      <div class="stat-pill">🔥 Streak: <strong>—</strong></div>
+      <div class="stat-pill">⚡ Daily DSA</div>
+    </div>
   </div>
 </div>
+
+<script>
+  function togglePw() {
+    const inp = document.getElementById('password');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+  document.getElementById('login-form').addEventListener('submit', function() {
+    const btn = document.getElementById('submit-btn');
+    btn.querySelector('.btn-text').hidden = true;
+    btn.querySelector('.btn-loader').hidden = false;
+    btn.disabled = true;
+  });
+</script>
 </body>
 </html>

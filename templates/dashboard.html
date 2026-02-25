@@ -11,25 +11,31 @@
 </head>
 <body>
 
-<!-- ── Top Nav ──────────────────────────────────────────────── -->
+<!-- ── Top Nav ── -->
 <nav class="navbar">
   <div class="nav-brand">
     <span class="brand-icon">&lt;/&gt;</span>
     <span class="brand-name">Code Everyday</span>
   </div>
+  <div class="nav-center">
+    <span class="nav-date" id="nav-date"></span>
+  </div>
   <div class="nav-right">
-    <span class="nav-user">👤 {{ username }}</span>
+    <div class="nav-user-pill">
+      <span class="nav-user-icon">👤</span>
+      <span class="nav-username">{{ username }}</span>
+    </div>
     <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
   </div>
 </nav>
 
-<!-- ── Main Layout ──────────────────────────────────────────── -->
+<!-- ── Main Layout ── -->
 <main class="main-layout">
 
   <!-- LEFT: Question Panel -->
   <section class="panel panel--question">
     <div class="panel-header">
-      <div class="pill pill--daily">Daily Challenge</div>
+      <div class="pill pill--daily">📅 Daily Challenge</div>
       <span class="panel-date" id="today-date"></span>
     </div>
 
@@ -37,10 +43,10 @@
 
     <div class="question-body">
       {% for line in question_desc.split('\n') %}
-        {% if line.startswith('**') and line.endswith('**') %}
+        {% if line.strip().startswith('**') and line.strip().endswith('**') %}
           <h4 class="q-section-heading">{{ line.replace('**','') }}</h4>
         {% elif line.strip() == '' %}
-          <br>
+          <div style="height:8px"></div>
         {% else %}
           <p>{{ line }}</p>
         {% endif %}
@@ -49,139 +55,316 @@
 
     <div class="io-examples">
       <div class="io-block">
-        <div class="io-label">Sample Input</div>
+        <div class="io-label">
+          <span class="io-icon">→</span> Sample Input
+        </div>
         <pre class="io-pre">{{ sample_input }}</pre>
       </div>
       <div class="io-block">
-        <div class="io-label">Sample Output</div>
+        <div class="io-label">
+          <span class="io-icon">←</span> Sample Output
+        </div>
         <pre class="io-pre">{{ sample_output }}</pre>
       </div>
+    </div>
+
+    <div class="tips-box">
+      <div class="tips-title">💡 Tips for beginners</div>
+      <ul class="tips-list">
+        <li>Read the problem carefully and understand the sample I/O first.</li>
+        <li>Use the <strong>Run</strong> button to test with your own inputs before submitting.</li>
+        <li>Think about edge cases: empty input, single element, negatives.</li>
+      </ul>
     </div>
   </section>
 
   <!-- RIGHT: Code Editor Panel -->
   <section class="panel panel--editor">
-    <form action="{{ url_for('dashboard') }}" method="post" id="code-form">
 
-      <!-- Language Selector -->
-      <div class="editor-toolbar">
-        <label for="language" class="toolbar-label">Language</label>
-        <select name="language" id="language" class="lang-select">
-          <option value="python3"  {% if last_language == 'python3'  %}selected{% endif %}>🐍 Python 3</option>
-          <option value="c"        {% if last_language == 'c'        %}selected{% endif %}>C</option>
-          <option value="cpp"      {% if last_language == 'cpp'      %}selected{% endif %}>C++</option>
-          <option value="java"     {% if last_language == 'java'     %}selected{% endif %}>☕ Java</option>
-          <option value="javascript" {% if last_language == 'javascript' %}selected{% endif %}>JS</option>
-        </select>
-      </div>
-
-      <!-- Code Area -->
-      <div class="code-wrap">
-        <div class="line-nums" id="line-nums">1</div>
-        <textarea
-          id="code-input"
-          name="code-input"
-          class="code-area"
-          placeholder="// Write your solution here..."
-          spellcheck="false"
-          autocorrect="off"
-          autocapitalize="off"
-          required>{{ last_code }}</textarea>
-      </div>
-
-      <!-- Custom Input -->
-      <div class="custom-input-block">
-        <label for="custom-input" class="input-label">
-          Custom Input
-          <span class="label-hint">(used by Run button)</span>
-        </label>
-        <textarea
-          id="custom-input"
-          name="custom-input"
-          class="custom-input-area"
-          placeholder="Enter your test input here..."
-          spellcheck="false">{{ last_custom_input }}</textarea>
-      </div>
-
-      <!-- Buttons -->
-      <div class="btn-row">
-        <button type="submit" name="action" value="run" class="btn btn--run">
-          ▶ Run
-        </button>
-        <button type="submit" name="action" value="submit" class="btn btn--submit">
-          ✓ Submit
-        </button>
-      </div>
-
-    </form>
-
-    <!-- Output -->
-    {% if show_output %}
-    <div class="result-panel result-panel--output">
-      <div class="result-label">Output</div>
-      <pre class="result-pre">{{ output if output else '(no output)' }}</pre>
+    <!-- Language Selector -->
+    <div class="editor-toolbar">
+      <label for="language" class="toolbar-label">Language</label>
+      <select name="language" id="language" class="lang-select">
+        <option value="python3">🐍 Python 3</option>
+        <option value="cpp">⚙️ C++</option>
+        <option value="c">🔧 C</option>
+        <option value="java">☕ Java</option>
+        <option value="javascript">🟨 JavaScript</option>
+      </select>
+      <div class="toolbar-spacer"></div>
+      <button type="button" class="btn-clear" onclick="clearCode()" title="Clear editor">🗑 Clear</button>
     </div>
-    {% endif %}
 
-    <!-- Verdict -->
-    {% if show_verdict %}
-    <div class="result-panel result-panel--verdict {% if verdict == 'Accepted' %}verdict--accepted{% else %}verdict--wrong{% endif %}">
-      <div class="result-label">Verdict</div>
-      <div class="verdict-text">{% if verdict == 'Accepted' %}Accepted ✓{% elif verdict == 'Wrong Answer' %}Wrong Answer ✗{% else %}{{ verdict }}{% endif %}</div>
-      {% if total > 0 %}
-      <div class="verdict-score">{{ passed }} / {{ total }} test cases passed</div>
-      <div class="verdict-bar">
-        <div class="verdict-bar-fill" data-pct="{{ (passed / total * 100) | int }}"></div>
-      </div>
-      {% endif %}
+    <!-- Code Area with line numbers -->
+    <div class="code-wrap" id="code-wrap">
+      <div class="line-nums" id="line-nums">1</div>
+      <textarea
+        id="code-input"
+        class="code-area"
+        placeholder="# Write your solution here...&#10;# Press Tab for 4 spaces&#10;# Click Run to test, Submit to judge"
+        spellcheck="false"
+        autocorrect="off"
+        autocapitalize="off"
+        autocomplete="off"></textarea>
     </div>
-    {% endif %}
+
+    <!-- Custom Input -->
+    <div class="custom-input-block">
+      <label for="custom-input" class="input-label">
+        <span>🧪 Custom Input</span>
+        <span class="label-hint">Used by the Run button</span>
+      </label>
+      <textarea
+        id="custom-input"
+        class="custom-input-area"
+        placeholder="Enter your own test input here..."
+        spellcheck="false"></textarea>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="btn-row">
+      <button type="button" id="btn-run" class="btn btn--run" onclick="handleRun()">
+        ▶ Run
+      </button>
+      <button type="button" id="btn-submit" class="btn btn--submit" onclick="handleSubmit()">
+        ✓ Submit
+      </button>
+    </div>
+
+    <!-- Output Panel (Run result) -->
+    <div class="result-panel result-panel--output" id="output-panel" hidden>
+      <div class="result-panel-header">
+        <span class="result-label">📤 Output</span>
+        <button class="result-close" onclick="document.getElementById('output-panel').hidden=true">✕</button>
+      </div>
+      <pre class="result-pre" id="output-text"></pre>
+    </div>
+
+    <!-- Verdict Panel (Submit result) -->
+    <div class="result-panel result-panel--verdict" id="verdict-panel" hidden>
+      <div class="result-panel-header">
+        <span class="result-label">🏆 Verdict</span>
+        <button class="result-close" onclick="document.getElementById('verdict-panel').hidden=true">✕</button>
+      </div>
+      <div class="verdict-content">
+        <div class="verdict-text" id="verdict-text"></div>
+        <div class="verdict-score" id="verdict-score"></div>
+        <div class="verdict-bar" id="verdict-bar-wrap">
+          <div class="verdict-bar-fill" id="verdict-bar-fill"></div>
+        </div>
+        <div class="verdict-errors" id="verdict-errors"></div>
+      </div>
+    </div>
 
   </section>
 </main>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay" hidden>
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-title" id="loading-title">Running your code...</div>
+    <div class="loading-sub" id="loading-sub">Connecting to execution server</div>
+  </div>
+</div>
+
 <script>
-  // Apply verdict bar width from data attribute (avoids CSS linter warning)
-  const barFill = document.querySelector('.verdict-bar-fill');
-  if (barFill) barFill.style.width = barFill.dataset.pct + '%';
+  // ── Date display ──────────────────────────────────────────────
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  document.getElementById('today-date').textContent = dateStr;
+  document.getElementById('nav-date').textContent = dateStr;
 
-  // Show today's date
-  document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-
-  // Live line numbers
+  // ── Line numbers ──────────────────────────────────────────────
   const ta = document.getElementById('code-input');
   const ln = document.getElementById('line-nums');
 
   function updateLines() {
     const lines = ta.value.split('\n').length;
-    ln.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+    ln.textContent = Array.from({length: lines}, (_, i) => i + 1).join('\n');
   }
   ta.addEventListener('input', updateLines);
   updateLines();
 
-  // Tab key support in textarea
+  // Sync scroll between line numbers and code area
+  ta.addEventListener('scroll', () => { ln.scrollTop = ta.scrollTop; });
+
+  // Tab key → 4 spaces
   ta.addEventListener('keydown', function(e) {
     if (e.key === 'Tab') {
       e.preventDefault();
-      const start = this.selectionStart;
-      const end = this.selectionEnd;
-      this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-      this.selectionStart = this.selectionEnd = start + 4;
+      const s = this.selectionStart, end = this.selectionEnd;
+      this.value = this.value.substring(0, s) + '    ' + this.value.substring(end);
+      this.selectionStart = this.selectionEnd = s + 4;
       updateLines();
     }
   });
 
-  // Show loading state on submit
-  document.getElementById('code-form').addEventListener('submit', function(e) {
-    const btn = e.submitter;
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = btn.value === 'run' ? '⏳ Running...' : '⏳ Judging...';
-      setTimeout(() => { btn.disabled = false; }, 30000);
+  // ── Clear code ────────────────────────────────────────────────
+  function clearCode() {
+    if (ta.value && confirm('Clear the editor? This cannot be undone.')) {
+      ta.value = '';
+      updateLines();
     }
-  });
-</script>
+  }
 
+  // ── Loading helpers ───────────────────────────────────────────
+  function showLoading(title, sub) {
+    document.getElementById('loading-title').textContent = title;
+    document.getElementById('loading-sub').textContent = sub;
+    document.getElementById('loading-overlay').hidden = false;
+  }
+
+  function hideLoading() {
+    document.getElementById('loading-overlay').hidden = true;
+  }
+
+  function setBtn(id, text, disabled) {
+    const b = document.getElementById(id);
+    b.textContent = text;
+    b.disabled = disabled;
+  }
+
+  // ── Run ───────────────────────────────────────────────────────
+  async function handleRun() {
+    const code = ta.value.trim();
+    if (!code) { alert('Please write some code first!'); return; }
+
+    showLoading('▶ Running your code...', 'Sending to execution server...');
+    setBtn('btn-run', '⏳ Running...', true);
+    document.getElementById('output-panel').hidden = true;
+
+    try {
+      const res = await fetch('/api/run', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          language: document.getElementById('language').value,
+          code: code,
+          custom_input: document.getElementById('custom-input').value,
+        })
+      });
+      const data = await res.json();
+      showRunOutput(data.output || '(no output)', data.ok !== false);
+    } catch (err) {
+      showRunOutput('Network error: ' + err.message, false);
+    } finally {
+      hideLoading();
+      setBtn('btn-run', '▶ Run', false);
+    }
+  }
+
+  function showRunOutput(text, ok) {
+    const panel = document.getElementById('output-panel');
+    const pre = document.getElementById('output-text');
+    pre.textContent = text;
+    pre.className = 'result-pre' + (ok ? '' : ' result-pre--error');
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Submit ────────────────────────────────────────────────────
+  async function handleSubmit() {
+    const code = ta.value.trim();
+    if (!code) { alert('Please write some code first!'); return; }
+
+    showLoading('⏳ Judging your solution...', 'Running test cases (this may take 30–60 seconds)...');
+    setBtn('btn-submit', '⏳ Judging...', true);
+    document.getElementById('verdict-panel').hidden = true;
+
+    // Animate sub-text while waiting
+    const subs = [
+      'Running test cases...',
+      'Checking edge cases...',
+      'Almost done...',
+      'Comparing outputs...',
+    ];
+    let si = 0;
+    const subTimer = setInterval(() => {
+      si = (si + 1) % subs.length;
+      document.getElementById('loading-sub').textContent = subs[si];
+    }, 4000);
+
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          language: document.getElementById('language').value,
+          code: code,
+        })
+      });
+      const data = await res.json();
+      clearInterval(subTimer);
+      showVerdict(data);
+    } catch (err) {
+      clearInterval(subTimer);
+      showVerdict({ ok: false, verdict: 'Network error: ' + err.message, passed: 0, total: 0 });
+    } finally {
+      hideLoading();
+      setBtn('btn-submit', '✓ Submit', false);
+    }
+  }
+
+  function showVerdict(data) {
+    const panel = document.getElementById('verdict-panel');
+    const vText = document.getElementById('verdict-text');
+    const vScore = document.getElementById('verdict-score');
+    const vBarFill = document.getElementById('verdict-bar-fill');
+    const vBarWrap = document.getElementById('verdict-bar-wrap');
+    const vErrors = document.getElementById('verdict-errors');
+
+    const accepted = data.verdict === 'Accepted';
+
+    // Set verdict text and style
+    vText.textContent = accepted ? '✓ Accepted!' : '✗ ' + (data.verdict || 'Wrong Answer');
+    vText.className = 'verdict-text ' + (accepted ? 'verdict-text--accepted' : 'verdict-text--wrong');
+    panel.className = 'result-panel result-panel--verdict ' + (accepted ? 'verdict--accepted' : 'verdict--wrong');
+
+    // Score line
+    if (data.total > 0) {
+      vScore.textContent = `${data.passed} / ${data.total} test cases passed`;
+      vBarWrap.hidden = false;
+      const pct = Math.round((data.passed / data.total) * 100);
+      vBarFill.style.width = '0%';
+      setTimeout(() => { vBarFill.style.width = pct + '%'; }, 100);
+      vBarFill.style.background = accepted ? 'var(--accent)' : 'var(--accent-err)';
+    } else {
+      vScore.textContent = data.total === 0 ? 'No test cases available.' : '';
+      vBarWrap.hidden = true;
+    }
+
+    // Show first few failed test cases for learning
+    vErrors.innerHTML = '';
+    if (!accepted && data.errors && data.errors.length > 0) {
+      const title = document.createElement('div');
+      title.className = 'errors-title';
+      title.textContent = `First ${data.errors.length} failing test case${data.errors.length > 1 ? 's' : ''}:`;
+      vErrors.appendChild(title);
+
+      data.errors.forEach(e => {
+        const card = document.createElement('div');
+        card.className = 'error-card';
+        card.innerHTML = `
+          <div class="error-row"><span class="error-key">Test #${e.test}</span></div>
+          <div class="error-row"><span class="error-key">Input:</span><code>${escHtml(e.input)}</code></div>
+          <div class="error-row"><span class="error-key">Expected:</span><code class="exp">${escHtml(e.expected)}</code></div>
+          <div class="error-row"><span class="error-key">Got:</span><code class="got">${escHtml(e.got)}</code></div>
+        `;
+        vErrors.appendChild(card);
+      });
+    }
+
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
 </body>
 </html>
