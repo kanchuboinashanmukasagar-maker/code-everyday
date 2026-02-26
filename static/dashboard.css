@@ -1,3 +1,31 @@
+/* ─── Setup Banner ──────────────────────────────────────────── */
+.setup-banner {
+  position: fixed;
+  top: var(--nav-h);
+  left: 0; right: 0;
+  background: rgba(251,191,36,0.12);
+  border-bottom: 1px solid rgba(251,191,36,0.35);
+  color: var(--accent-warn);
+  font-size: 13px;
+  padding: 10px 20px;
+  text-align: center;
+  z-index: 99;
+}
+
+.setup-banner code {
+  font-family: var(--font-code);
+  background: rgba(251,191,36,0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.setup-banner a {
+  color: var(--accent2);
+  font-weight: 700;
+  text-decoration: none;
+}
+.setup-banner a:hover { text-decoration: underline; }
+
 /* ─── Reset & Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -619,9 +647,6 @@ html, body {
   z-index: 200;
 }
 
-.loading-overlay[hidden] {
-  display: none !important;
-}
 .loading-box {
   background: var(--surface);
   border: 1px solid var(--border2);

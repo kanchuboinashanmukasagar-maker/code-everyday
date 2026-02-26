@@ -29,6 +29,18 @@
   </div>
 </nav>
 
+<!-- ── Judge0 warning banner ── -->
+{% if not judge0_configured %}
+<div class="setup-banner">
+  ⚠️ <strong>Code execution not set up.</strong>
+  Add <code>JUDGE0_API_KEY</code> in Render environment variables.
+  Get a free key at
+  <a href="https://rapidapi.com/judge0-official/api/judge0-ce" target="_blank" rel="noopener">
+    rapidapi.com → Judge0 CE → Subscribe (FREE)
+  </a>
+</div>
+{% endif %}
+
 <!-- ── Main Layout ── -->
 <main class="main-layout">
 
@@ -226,16 +238,6 @@
     b.disabled = disabled;
   }
 
-  async function fetchWithTimeout(url, options = {}, timeoutMs = 35000) {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      return await fetch(url, { ...options, signal: controller.signal });
-    } finally {
-      clearTimeout(id);
-    }
-  }
-
   // ── Run ───────────────────────────────────────────────────────
   async function handleRun() {
     const code = ta.value.trim();
@@ -246,7 +248,7 @@
     document.getElementById('output-panel').hidden = true;
 
     try {
-      const res = await fetchWithTimeout('/api/run', {
+      const res = await fetch('/api/run', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -258,10 +260,7 @@
       const data = await res.json();
       showRunOutput(data.output || '(no output)', data.ok !== false);
     } catch (err) {
-      const msg = err.name === 'AbortError'
-        ? 'Request timed out. Please try again.'
-        : 'Network error: ' + err.message;
-      showRunOutput(msg, false);
+      showRunOutput('Network error: ' + err.message, false);
     } finally {
       hideLoading();
       setBtn('btn-run', '▶ Run', false);
@@ -300,7 +299,7 @@
     }, 4000);
 
     try {
-      const res = await fetchWithTimeout('/api/submit', {
+      const res = await fetch('/api/submit', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -313,10 +312,7 @@
       showVerdict(data);
     } catch (err) {
       clearInterval(subTimer);
-      const msg = err.name === 'AbortError'
-        ? 'Request timed out. Please try again.'
-        : 'Network error: ' + err.message;
-      showVerdict({ ok: false, verdict: msg, passed: 0, total: 0 });
+      showVerdict({ ok: false, verdict: 'Network error: ' + err.message, passed: 0, total: 0 });
     } finally {
       hideLoading();
       setBtn('btn-submit', '✓ Submit', false);
