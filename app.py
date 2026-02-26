@@ -1,13 +1,13 @@
-import os, json, re, base64, psycopg2, bcrypt, requests
+import os, json, re, psycopg2, bcrypt, requests
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 
 app = Flask(__name__)
-app.secret_key  = os.getenv("SECRET_KEY", "dev-secret")
-DATABASE_URL    = os.getenv("DATABASE_URL")
-GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY", "")
-JUDGE0_API_KEY  = os.getenv("JUDGE0_API_KEY", "")
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
+DATABASE_URL   = os.getenv("DATABASE_URL")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-LANG_IDS = {"python3": 71, "c": 50, "cpp": 54, "java": 62, "javascript": 63}
+JUDGE0_URL = "https://ce.judge0.com/submissions?base64_encoded=false&wait=true"
+LANG_IDS   = {"python3": 71, "c": 50, "cpp": 54, "java": 62, "javascript": 63}
 
 
 def get_conn():
@@ -18,8 +18,7 @@ def get_conn():
 
 
 def init_db():
-    conn = get_conn()
-    cur  = conn.cursor()
+    conn = get_conn(); cur = conn.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, username VARCHAR(80) UNIQUE NOT NULL, password_hash TEXT NOT NULL)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS daily_questions (
@@ -93,10 +92,8 @@ Use this exact structure:
 {"title":"...","description":"...","sample_input":"...","sample_output":"...","hidden_tests":[{"input":"...","output":"..."}]}
 Include exactly 20 hidden_tests. Topic: arrays, strings, hash maps, or stacks."""
         response = model.generate_content(prompt, generation_config={"temperature": 0.9})
-        raw      = response.text
-        raw      = re.sub(r"```json|```", "", raw).strip()
-        start    = raw.find("{"); end = raw.rfind("}")
-        data     = json.loads(raw[start:end+1])
+        raw      = re.sub(r"```json|```", "", response.text).strip()
+        data     = json.loads(raw[raw.find("{"):raw.rfind("}")+1])
         assert "title" in data and "hidden_tests" in data and len(data["hidden_tests"]) >= 5
         return data
     except Exception as e:
@@ -133,33 +130,25 @@ def admin_refresh():
 
 
 def run_code(lang, code, stdin):
-    if not JUDGE0_API_KEY:
-        return {"ok": False, "output": "JUDGE0_API_KEY is not set in Render environment variables."}
     lang_id = LANG_IDS.get(lang)
     if not lang_id:
         return {"ok": False, "output": f"Language '{lang}' not supported."}
-    headers = {"Content-Type": "application/json",
-               "X-RapidAPI-Key": JUDGE0_API_KEY, "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"}
-    payload = {"language_id": lang_id,
-               "source_code": base64.b64encode(code.encode()).decode(),
-               "stdin": base64.b64encode((stdin or "").encode()).decode(),
-               "base64_encoded": True}
+    payload = {"language_id": lang_id, "source_code": code, "stdin": stdin or ""}
     try:
-        r    = requests.post("https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=true&wait=true",
-                             json=payload, headers=headers, timeout=30)
-        if r.status_code == 401: return {"ok": False, "output": "Invalid JUDGE0_API_KEY."}
-        if r.status_code == 429: return {"ok": False, "output": "Rate limit hit, wait and try again."}
-        d = r.json()
-        def dec(s): return base64.b64decode(s).decode(errors="replace").strip() if s else ""
-        compile_out = dec(d.get("compile_output"))
-        stdout      = dec(d.get("stdout"))
-        stderr      = dec(d.get("stderr"))
-        if compile_out:  return {"ok": False, "output": f"Compilation Error:\n{compile_out}"}
-        if d.get("status", {}).get("id") == 5: return {"ok": False, "output": "Time Limit Exceeded."}
-        if stderr and not stdout: return {"ok": False, "output": f"Runtime Error:\n{stderr}"}
+        r = requests.post(JUDGE0_URL, json=payload, timeout=30)
+        if r.status_code == 429:
+            return {"ok": False, "output": "Too many requests. Please wait a moment and try again."}
+        d           = r.json()
+        stdout      = (d.get("stdout") or "").strip()
+        stderr      = (d.get("stderr") or "").strip()
+        compile_out = (d.get("compile_output") or "").strip()
+        status_id   = d.get("status", {}).get("id", 0)
+        if compile_out:                   return {"ok": False, "output": f"Compilation Error:\n{compile_out}"}
+        if status_id == 5:                return {"ok": False, "output": "Time Limit Exceeded."}
+        if stderr and not stdout:         return {"ok": False, "output": f"Runtime Error:\n{stderr}"}
         return {"ok": True, "output": stdout or "(no output)"}
     except Exception as e:
-        return {"ok": False, "output": f"Error: {e}"}
+        return {"ok": False, "output": f"Error connecting to Judge0: {e}"}
 
 
 def normalize(text):
@@ -221,9 +210,9 @@ def dashboard():
         cur.execute("SELECT id, title, description, sample_input, sample_output FROM daily_questions WHERE qdate=CURRENT_DATE")
         row = cur.fetchone()
     cur.close(); conn.close()
-    return render_template("dashboard.html", username=session.get("username"), question_title=row[1],
-                           question_desc=row[2], sample_input=row[3], sample_output=row[4],
-                           judge0_configured=bool(JUDGE0_API_KEY))
+    return render_template("dashboard.html", username=session.get("username"),
+                           question_title=row[1], question_desc=row[2],
+                           sample_input=row[3], sample_output=row[4])
 
 
 if __name__ == "__main__":
