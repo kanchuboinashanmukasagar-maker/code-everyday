@@ -31,7 +31,10 @@ def init_db():
 
 
 with app.app_context():
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        print(f"DB init error (will retry): {e}")
 
 
 @app.route("/", methods=["GET", "POST"])
