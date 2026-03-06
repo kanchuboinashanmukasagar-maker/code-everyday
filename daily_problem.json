@@ -1,0 +1,23 @@
+{
+  "date": "2026-03-06",
+  "title": "Sum of Array",
+  "description": "Given an array of integers, return the sum of all elements.\n\n**Input Format:**\n- First line: integer `n` (number of elements)\n- Second line: `n` space-separated integers\n\n**Output Format:**\n- A single integer \u2014 the sum of all elements\n\n**Example:**\n```\nInput:\n4\n1 2 3 4\n\nOutput:\n10\n```",
+  "testcases": [
+    {
+      "input": "4\n1 2 3 4",
+      "output": "10"
+    },
+    {
+      "input": "3\n10 20 30",
+      "output": "60"
+    },
+    {
+      "input": "1\n7",
+      "output": "7"
+    },
+    {
+      "input": "5\n-1 -2 3 4 5",
+      "output": "9"
+    }
+  ]
+}

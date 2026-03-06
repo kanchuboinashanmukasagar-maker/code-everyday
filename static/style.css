@@ -1266,3 +1266,6 @@ pre, code { font-family: var(--font-code); }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
 }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
