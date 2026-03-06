@@ -1,90 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Login — Code Everyday</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
-</head>
-<body>
-<div class="auth-wrapper">
+{% extends "base.html" %}
+{% block title %}Login — CodeDaily{% endblock %}
+
+{% block content %}
+<div class="auth-page">
   <div class="auth-card">
-    <div class="brand">
-      <span class="brand-icon">&lt;/&gt;</span>
-      <h1 class="brand-name">Code Everyday</h1>
-      <p class="brand-sub">One problem. Every day. Get better.</p>
+    <div class="auth-brand">
+      <div class="brand-icon">⌨</div>
+      <h1 class="brand-name">CodeDaily</h1>
+      <p class="brand-sub">Sharpen your skills, one problem at a time.</p>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, msg in messages %}
-          <div class="flash flash--{{ category }}">{{ msg }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <form action="{{ url_for('login') }}" method="post" class="auth-form" id="login-form">
-      <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="your_username" autocomplete="username" required>
+    <form method="POST" action="{{ url_for('login') }}" class="auth-form" novalidate>
+      <div class="form-group">
+        <label for="identifier" class="form-label">Username or Email</label>
+        <input
+          type="text"
+          id="identifier"
+          name="identifier"
+          class="form-input"
+          value="{{ identifier|default('') }}"
+          placeholder="you@example.com"
+          autocomplete="username"
+          required
+        />
       </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <div class="password-wrap">
-          <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
-          <button type="button" class="show-pw" onclick="togglePw()" aria-label="Toggle password">👁</button>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <div class="input-wrapper">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="form-input"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+          <button type="button" class="toggle-pw" onclick="togglePw('password', this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
         </div>
       </div>
-      <button type="submit" class="btn-primary" id="submit-btn">
-        <span class="btn-text">Sign In</span>
-        <span class="btn-loader" hidden>⏳ Signing in...</span>
+
+      <button type="submit" class="btn btn--primary btn--full">
+        Sign In
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
       </button>
     </form>
 
-    <p class="auth-switch">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    <p class="auth-switch">
+      No account yet?
+      <a href="{{ url_for('register') }}">Create one →</a>
+    </p>
   </div>
 
   <div class="auth-deco" aria-hidden="true">
-    <div class="deco-window">
-      <div class="deco-titlebar">
-        <span class="deco-dot deco-dot--red"></span>
-        <span class="deco-dot deco-dot--yellow"></span>
-        <span class="deco-dot deco-dot--green"></span>
-        <span class="deco-filename">solution.py</span>
-      </div>
-      <pre class="deco-code"><span class="c-kw">def</span> <span class="c-fn">solve</span>(nums):
-    <span class="c-comment"># Hash map for O(n) lookup</span>
-    seen = {}
-    <span class="c-kw">for</span> i, n <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(nums):
-        <span class="c-kw">if</span> n <span class="c-kw">in</span> seen:
-            <span class="c-kw">return</span> [seen[n], i]
-        seen[n] = i
-    <span class="c-kw">return</span> []
-
-<span class="c-comment"># ✓ Accepted — 1ms | 14.3 MB</span>
-<span class="c-comment"># Today's challenge awaits you...</span></pre>
+    <div class="code-snippet">
+<pre><span class="kw">def</span> <span class="fn">daily_challenge</span>():
+    <span class="kw">while</span> <span class="val">True</span>:
+        problem = <span class="fn">get_today</span>()
+        solution = <span class="fn">think</span>(problem)
+        <span class="kw">if</span> <span class="fn">submit</span>(solution):
+            <span class="fn">celebrate</span>()
+        streak += <span class="val">1</span></pre>
     </div>
-    <div class="deco-stats">
-      <div class="stat-pill">🔥 Streak: <strong>—</strong></div>
-      <div class="stat-pill">⚡ Daily DSA</div>
-    </div>
+    <div class="deco-pill">Day 1 → ∞</div>
   </div>
 </div>
 
 <script>
-  function togglePw() {
-    const inp = document.getElementById('password');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-  }
-  document.getElementById('login-form').addEventListener('submit', function() {
-    const btn = document.getElementById('submit-btn');
-    btn.querySelector('.btn-text').hidden = true;
-    btn.querySelector('.btn-loader').hidden = false;
-    btn.disabled = true;
-  });
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.style.opacity = inp.type === 'text' ? '1' : '0.5';
+}
 </script>
-</body>
-</html>
+{% endblock %}

@@ -1,198 +1,209 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dashboard — Code Everyday</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Dashboard — CodeDaily{% endblock %}
 
-<nav class="navbar">
-  <div class="nav-brand">
-    <span class="brand-icon">&lt;/&gt;</span>
-    <span class="brand-name">Code Everyday</span>
-  </div>
-  <div class="nav-right">
-    <span class="nav-user">👤 {{ username }}</span>
-    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
-  </div>
-</nav>
-
-<main class="main-layout">
-
-  <section class="panel panel--question">
-    <div class="panel-header">
-      <div class="pill pill--daily">Daily Challenge</div>
-      <span class="panel-date" id="today-date"></span>
+{% block content %}
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <span class="brand-icon-sm">⌨</span>
+      <span class="brand-text">CodeDaily</span>
     </div>
-    <h2 class="question-title">{{ question_title }}</h2>
-    <div class="question-body">
-      {% for line in question_desc.split('\n') %}
-        {% if line.strip() == '' %}<br>
-        {% else %}<p>{{ line }}</p>{% endif %}
-      {% endfor %}
-    </div>
-    <div class="io-examples">
-      <div class="io-block">
-        <div class="io-label">Sample Input</div>
-        <pre class="io-pre">{{ sample_input }}</pre>
+
+    <nav class="sidebar__nav">
+      <a href="{{ url_for('dashboard') }}" class="nav-item nav-item--active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        Dashboard
+      </a>
+      <a href="{{ url_for('problem') }}" class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Today's Problem
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="user-badge">
+        <div class="user-avatar">{{ username[0]|upper }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ username }}</span>
+          <span class="user-role">Coder</span>
+        </div>
       </div>
-      <div class="io-block">
-        <div class="io-label">Sample Output</div>
-        <pre class="io-pre">{{ sample_output }}</pre>
+      <a href="{{ url_for('logout') }}" class="logout-btn" title="Logout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Good {{ 'morning' if now_hour < 12 else ('afternoon' if now_hour < 17 else 'evening') }}, {{ username }} 👋</h1>
+        <p class="page-subtitle">{{ today }} · Daily challenge is live</p>
+      </div>
+      <a href="{{ url_for('problem') }}" class="btn btn--primary">
+        Solve Today's Problem
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </header>
+
+    <!-- Stats Row -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="stat-body">
+          <span class="stat-value">{{ submissions|length }}</span>
+          <span class="stat-label">Total Attempts</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="stat-body">
+          <span class="stat-value">{{ submissions|selectattr('status', 'equalto', 'solved')|list|length }}</span>
+          <span class="stat-label">Solved</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="stat-body">
+          <span class="stat-value">
+            {% if today_sub %}
+              {{ today_sub.passed }}/{{ today_sub.total }}
+            {% else %}
+              —
+            {% endif %}
+          </span>
+          <span class="stat-label">Today's Best</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
+        <div class="stat-body">
+          <span class="stat-value">
+            {% set solved = submissions|selectattr('status', 'equalto', 'solved')|list %}
+            {% if solved %}
+              {{ (solved|length / submissions|length * 100)|int }}%
+            {% else %}
+              0%
+            {% endif %}
+          </span>
+          <span class="stat-label">Success Rate</span>
+        </div>
       </div>
     </div>
-  </section>
 
-  <section class="panel panel--editor">
+    <!-- Today's Problem Card -->
+    <section class="section">
+      <h2 class="section-title">Today's Challenge</h2>
+      <div class="problem-card">
+        <div class="problem-card__header">
+          <div>
+            <span class="problem-badge">Daily</span>
+            <h3 class="problem-title">{{ problem.title }}</h3>
+          </div>
+          {% if today_sub %}
+            {% if today_sub.status == 'solved' %}
+              <span class="status-badge status-badge--solved">✓ Solved</span>
+            {% else %}
+              <span class="status-badge status-badge--attempted">
+                {{ today_sub.passed }}/{{ today_sub.total }} Passed
+              </span>
+            {% endif %}
+          {% else %}
+            <span class="status-badge status-badge--new">New</span>
+          {% endif %}
+        </div>
+        <p class="problem-preview">{{ problem.description[:200] }}{% if problem.description|length > 200 %}…{% endif %}</p>
+        <a href="{{ url_for('problem') }}" class="btn btn--outline">
+          Open Problem →
+        </a>
+      </div>
+    </section>
 
-    <div class="editor-toolbar">
-      <label class="toolbar-label">Language</label>
-      <select id="language" class="lang-select">
-        <option value="python3">🐍 Python 3</option>
-        <option value="c">C</option>
-        <option value="cpp">C++</option>
-        <option value="java">☕ Java</option>
-        <option value="javascript">JS</option>
-      </select>
-    </div>
+    <!-- Recent Submissions -->
+    <section class="section">
+      <h2 class="section-title">Recent Submissions</h2>
+      {% if submissions %}
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Problem</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sub in submissions %}
+              <tr>
+                <td class="td-mono">{{ sub.problem_date }}</td>
+                <td>Daily Challenge</td>
+                <td class="td-mono">{{ sub.passed }}/{{ sub.total }}</td>
+                <td>
+                  <span class="status-pill status-pill--{{ sub.status }}">
+                    {{ sub.status|capitalize }}
+                  </span>
+                </td>
+                <td class="td-muted">{{ sub.submitted_at[:16] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p>No submissions yet. <a href="{{ url_for('problem') }}">Solve your first problem!</a></p>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+</div>
+{% endblock %}
 
-    <div class="code-wrap">
-      <div class="line-nums" id="line-nums">1</div>
-      <textarea id="code-input" class="code-area"
-        placeholder="# Write your solution here..."
-        spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
-    </div>
-
-    <div class="custom-input-block">
-      <label class="input-label">
-        Custom Input <span class="label-hint">(used by Run)</span>
-      </label>
-      <textarea id="custom-input" class="custom-input-area"
-        placeholder="Enter test input here..." spellcheck="false"></textarea>
-    </div>
-
-    <div class="btn-row">
-      <button id="btn-run" class="btn btn--run" onclick="handleRun()">▶ Run</button>
-      <button id="btn-submit" class="btn btn--submit" onclick="handleSubmit()">✓ Submit</button>
-    </div>
-
-    <div id="output-panel" class="result-panel" style="display:none">
-      <div class="result-label">Output</div>
-      <pre id="output-text" class="result-pre"></pre>
-    </div>
-
-    <div id="verdict-panel" class="result-panel result-panel--verdict" style="display:none">
-      <div class="result-label">Verdict</div>
-      <div id="verdict-text" class="verdict-text"></div>
-      <div id="verdict-score" class="verdict-score"></div>
-      <div class="verdict-bar"><div id="verdict-bar-fill" class="verdict-bar-fill"></div></div>
-      <div id="verdict-errors"></div>
-    </div>
-
-  </section>
-</main>
-
+{% block scripts %}
 <script>
-  document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-
-  const ta = document.getElementById('code-input');
-  const ln = document.getElementById('line-nums');
-
-  function updateLines() {
-    const count = ta.value.split('\n').length;
-    ln.textContent = Array.from({length: count}, (_, i) => i + 1).join('\n');
-  }
-  ta.addEventListener('input', updateLines);
-  ta.addEventListener('scroll', () => { ln.scrollTop = ta.scrollTop; });
-  updateLines();
-
-  ta.addEventListener('keydown', function(e) {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const s = this.selectionStart;
-      this.value = this.value.substring(0, s) + '    ' + this.value.substring(this.selectionEnd);
-      this.selectionStart = this.selectionEnd = s + 4;
-      updateLines();
-    }
-  });
-
-  function setBtn(id, text, off) {
-    const b = document.getElementById(id);
-    b.textContent = text;
-    b.disabled = off;
-  }
-
-  async function handleRun() {
-    const code = ta.value.trim();
-    if (!code) { alert('Write some code first!'); return; }
-    setBtn('btn-run', '⏳ Running...', true);
-    document.getElementById('output-panel').style.display = 'none';
-    try {
-      const res  = await fetch('/api/run', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          language: document.getElementById('language').value,
-          code: code,
-          custom_input: document.getElementById('custom-input').value
-        })
-      });
-      const data = await res.json();
-      document.getElementById('output-text').textContent = data.output || '(no output)';
-      document.getElementById('output-panel').style.display = 'block';
-    } catch (err) {
-      document.getElementById('output-text').textContent = 'Network error: ' + err.message;
-      document.getElementById('output-panel').style.display = 'block';
-    }
-    setBtn('btn-run', '▶ Run', false);
-  }
-
-  async function handleSubmit() {
-    const code = ta.value.trim();
-    if (!code) { alert('Write some code first!'); return; }
-    setBtn('btn-submit', '⏳ Judging...', true);
-    document.getElementById('verdict-panel').style.display = 'none';
-    try {
-      const res  = await fetch('/api/submit', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          language: document.getElementById('language').value,
-          code: code
-        })
-      });
-      const data = await res.json();
-      const ok   = data.verdict === 'Accepted';
-      const vp   = document.getElementById('verdict-panel');
-      vp.className = 'result-panel result-panel--verdict ' + (ok ? 'verdict--accepted' : 'verdict--wrong');
-      document.getElementById('verdict-text').textContent  = ok ? 'Accepted ✓' : 'Wrong Answer ✗';
-      document.getElementById('verdict-score').textContent = data.total > 0 ? `${data.passed} / ${data.total} test cases passed` : '';
-      const fill = document.getElementById('verdict-bar-fill');
-      fill.style.width = data.total > 0 ? Math.round(data.passed / data.total * 100) + '%' : '0%';
-      const errDiv = document.getElementById('verdict-errors');
-      errDiv.innerHTML = '';
-      if (!ok && data.errors && data.errors.length > 0) {
-        data.errors.forEach(e => {
-          errDiv.innerHTML += `<div class="error-card">
-            <b>Test #${e.test}</b><br>
-            Input: <code>${e.input}</code><br>
-            Expected: <code style="color:#4ade80">${e.expected}</code><br>
-            Got: <code style="color:#f87171">${e.got}</code>
-          </div>`;
-        });
-      }
-      vp.style.display = 'block';
-    } catch (err) {
-      document.getElementById('verdict-text').textContent = 'Network error: ' + err.message;
-      document.getElementById('verdict-panel').style.display = 'block';
-    }
-    setBtn('btn-submit', '✓ Submit', false);
-  }
+  // Inject server-side hour for greeting
+  const d = new Date();
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% block title %}{{ problem.title }} — CodeDaily{% endblock %}
+
+{% block head %}
+<!-- CodeMirror 5 CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="ide-layout">
+
+  <!-- ── Top Bar ──────────────────────────────────────────────── -->
+  <header class="ide-topbar">
+    <div class="ide-topbar__left">
+      <a href="{{ url_for('dashboard') }}" class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Dashboard
+      </a>
+      <div class="ide-divider"></div>
+      <span class="ide-problem-name">{{ problem.title }}</span>
+    </div>
+    <div class="ide-topbar__right">
+      <span class="ide-lang-badge">Python 3</span>
+      <a href="{{ url_for('logout') }}" class="btn btn--ghost btn--sm">Logout</a>
+    </div>
+  </header>
+
+  <!-- ── Body ─────────────────────────────────────────────────── -->
+  <div class="ide-body">
+
+    <!-- Left Panel: Problem Description -->
+    <aside class="ide-panel ide-panel--left">
+      <div class="panel-tabs">
+        <button class="panel-tab panel-tab--active" onclick="switchTab('description', this)">Description</button>
+        <button class="panel-tab" onclick="switchTab('submissions', this)">Submissions</button>
+      </div>
+
+      <!-- Description Tab -->
+      <div id="tab-description" class="tab-content tab-content--active">
+        <div class="problem-header">
+          <span class="problem-day-badge">📅 Daily</span>
+          <h2 class="problem-h2">{{ problem.title }}</h2>
+        </div>
+        <div class="problem-desc" id="problem-description">{{ problem.description }}</div>
+      </div>
+
+      <!-- Submissions Tab -->
+      <div id="tab-submissions" class="tab-content">
+        <div id="submissions-list">
+          <p class="muted-text">Submit your solution to see results here.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Panel: Editor + IO -->
+    <section class="ide-panel ide-panel--right">
+
+      <!-- Editor Section -->
+      <div class="editor-section">
+        <div class="editor-toolbar">
+          <span class="toolbar-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
+            Solution
+          </span>
+          <button class="btn btn--ghost btn--xs" onclick="resetCode()" title="Reset to starter code">
+            Reset
+          </button>
+        </div>
+        <textarea id="code-editor"></textarea>
+      </div>
+
+      <!-- IO Section -->
+      <div class="io-section">
+        <div class="io-grid">
+
+          <!-- Custom Input -->
+          <div class="io-pane">
+            <div class="io-pane__header">
+              <label class="io-label" for="custom-input">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Custom Input
+              </label>
+            </div>
+            <textarea id="custom-input" class="io-textarea" placeholder="Enter input for your code here…" spellcheck="false"></textarea>
+          </div>
+
+          <!-- Run Output -->
+          <div class="io-pane">
+            <div class="io-pane__header">
+              <span class="io-label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+                </svg>
+                Output
+              </span>
+              <span id="run-status" class="run-status"></span>
+            </div>
+            <pre id="run-output" class="io-output io-output--neutral">Click Run to execute your code…</pre>
+          </div>
+        </div>
+
+        <!-- Judge Result -->
+        <div id="judge-panel" class="judge-panel" style="display:none">
+          <div id="judge-content"></div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+          <button id="run-btn" class="btn btn--secondary" onclick="runCode()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Run
+          </button>
+          <button id="submit-btn" class="btn btn--primary" onclick="submitCode()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+            </svg>
+            Submit
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── CodeMirror Setup ────────────────────────────────────────────────────────
+const STARTER_CODE = `# Write your Python solution here
+# Read input using input() or sys.stdin
+
+`;
+
+const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+  mode: 'python',
+  theme: 'dracula',
+  lineNumbers: true,
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  styleActiveLine: true,
+  indentUnit: 4,
+  tabSize: 4,
+  indentWithTabs: false,
+  lineWrapping: false,
+  extraKeys: {
+    Tab: (cm) => cm.replaceSelection('    '),
+    'Ctrl-Enter': () => runCode(),
+    'Ctrl-Shift-Enter': () => submitCode(),
+  }
+});
+
+editor.setValue(STARTER_CODE);
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function setRunning(btn, label) {
+  btn.disabled = true;
+  btn.classList.add('btn--loading');
+  btn.querySelector('svg').style.display = 'none';
+  btn.innerHTML = `<span class="spinner"></span>${label}`;
+}
+
+function resetBtn(btn, icon, label) {
+  btn.disabled = false;
+  btn.classList.remove('btn--loading');
+  btn.innerHTML = `${icon}<span>${label}</span>`;
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('tab-content--active'));
+  el.classList.add('panel-tab--active');
+  document.getElementById(`tab-${tab}`).classList.add('tab-content--active');
+}
+
+function resetCode() {
+  if (confirm('Reset editor to starter code?')) {
+    editor.setValue(STARTER_CODE);
+  }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Run Code ─────────────────────────────────────────────────────────────────
+async function runCode() {
+  const btn = document.getElementById('run-btn');
+  const output = document.getElementById('run-output');
+  const status = document.getElementById('run-status');
+
+  const origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Running…`;
+
+  output.className = 'io-output io-output--running';
+  output.textContent = 'Executing…';
+  status.textContent = '';
+
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: editor.getValue(),
+        input: document.getElementById('custom-input').value
+      })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      output.className = 'io-output io-output--error';
+      output.textContent = data.error;
+      if (data.output) {
+        output.textContent = data.output + '\n\n' + data.error;
+      }
+      status.innerHTML = '<span class="badge badge--error">Error</span>';
+    } else {
+      output.className = 'io-output io-output--success';
+      output.textContent = data.output || '(no output)';
+      status.innerHTML = '<span class="badge badge--success">Success</span>';
+    }
+  } catch (err) {
+    output.className = 'io-output io-output--error';
+    output.textContent = 'Network error. Please try again.';
+    status.innerHTML = '<span class="badge badge--error">Error</span>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
+// ── Submit Code ──────────────────────────────────────────────────────────────
+async function submitCode() {
+  const btn = document.getElementById('submit-btn');
+  const judgePanel = document.getElementById('judge-panel');
+  const judgeContent = document.getElementById('judge-content');
+
+  const origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Judging…`;
+
+  judgePanel.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: editor.getValue() })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      judgeContent.innerHTML = `<div class="judge-error">${escapeHtml(data.error)}</div>`;
+      judgePanel.style.display = 'block';
+      // Switch to submissions tab
+      switchTab('submissions', document.querySelectorAll('.panel-tab')[1]);
+      return;
+    }
+
+    const allPassed = data.passed === data.total;
+    const pct = Math.round((data.passed / data.total) * 100);
+
+    let html = `
+      <div class="judge-result ${allPassed ? 'judge-result--pass' : 'judge-result--fail'}">
+        <div class="judge-score-row">
+          <div class="judge-verdict ${allPassed ? 'verdict--pass' : 'verdict--fail'}">
+            ${allPassed ? '🎉 Accepted' : '✗ Wrong Answer'}
+          </div>
+          <div class="judge-score">
+            <span class="score-fraction">${data.passed} / ${data.total}</span>
+            <span class="score-label">test cases passed</span>
+          </div>
+        </div>
+        <div class="judge-progress">
+          <div class="progress-bar">
+            <div class="progress-fill ${allPassed ? 'progress-fill--pass' : 'progress-fill--fail'}"
+                 style="width: ${pct}%"></div>
+          </div>
+          <span class="progress-pct">${pct}%</span>
+        </div>
+    `;
+
+    if (data.first_failure) {
+      const f = data.first_failure;
+      html += `
+        <div class="failed-case">
+          <div class="failed-case__title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            First Failed Test Case
+          </div>
+          <div class="failed-case__grid">
+            <div class="tc-block tc-block--input">
+              <div class="tc-label">Input</div>
+              <pre class="tc-pre">${escapeHtml(f.input || '(empty)')}</pre>
+            </div>
+            <div class="tc-block tc-block--expected">
+              <div class="tc-label">Expected Output</div>
+              <pre class="tc-pre">${escapeHtml(f.expected)}</pre>
+            </div>
+            <div class="tc-block tc-block--actual">
+              <div class="tc-label">Your Output</div>
+              <pre class="tc-pre">${escapeHtml(f.actual)}</pre>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+    judgeContent.innerHTML = html;
+    judgePanel.style.display = 'block';
+
+    // Update submissions tab
+    addSubmissionToList(data);
+
+    // Switch to submissions tab if not already
+    switchTab('submissions', document.querySelectorAll('.panel-tab')[1]);
+
+  } catch (err) {
+    judgeContent.innerHTML = `<div class="judge-error">Network error. Please try again.</div>`;
+    judgePanel.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
+// ── Submission History ────────────────────────────────────────────────────────
+let submissionCount = 0;
+
+function addSubmissionToList(data) {
+  const list = document.getElementById('submissions-list');
+  submissionCount++;
+
+  const now = new Date().toLocaleTimeString();
+  const allPassed = data.passed === data.total;
+
+  const item = document.createElement('div');
+  item.className = `submission-item ${allPassed ? 'submission-item--pass' : 'submission-item--fail'}`;
+  item.innerHTML = `
+    <div class="submission-item__meta">
+      <span class="sub-num">#${submissionCount}</span>
+      <span class="sub-time">${now}</span>
+    </div>
+    <div class="submission-item__result">
+      <span class="sub-verdict ${allPassed ? 'verdict-pass' : 'verdict-fail'}">
+        ${allPassed ? 'Accepted' : 'Wrong Answer'}
+      </span>
+      <span class="sub-score">${data.passed}/${data.total}</span>
+    </div>
+  `;
+
+  if (list.querySelector('.muted-text')) {
+    list.innerHTML = '';
+  }
+  list.insertBefore(item, list.firstChild);
+}
+
+// ── Problem Description Formatting ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const desc = document.getElementById('problem-description');
+  if (desc) {
+    // Format inline code and code blocks
+    desc.innerHTML = desc.innerHTML
+      .replace(/```([\s\S]*?)```/g, '<pre class="desc-pre"><code>$1</code></pre>')
+      .replace(/`([^`]+)`/g, '<code class="desc-inline-code">$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br/>');
+  }
+});
+
+// ── Keyboard Shortcuts hint ───────────────────────────────────────────────────
+console.log('%cCodeDaily Shortcuts', 'font-weight:bold;color:#7c3aed');
+console.log('Ctrl+Enter → Run | Ctrl+Shift+Enter → Submit');
+</script>
+{% endblock %}
